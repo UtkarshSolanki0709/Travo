@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router";
 import LoginPage from "./pages/LoginPage";
 import SignUpPage from "./pages/SignUpPage";
