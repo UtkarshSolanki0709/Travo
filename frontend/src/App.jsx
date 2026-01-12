@@ -16,7 +16,6 @@ function App() {
     if (authUser) connectSocket();
   }, [authUser, connectSocket]);
 
-  console.log({ authUser });
   if (isCheckingAuth) {
     return <PageLoader />;
   }

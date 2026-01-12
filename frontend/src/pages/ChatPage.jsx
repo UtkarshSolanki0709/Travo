@@ -43,6 +43,8 @@ function ChatPage() {
           <button
             className="md:hidden absolute top-4 left-4 z-10 bg-slate-800/50 p-2 rounded-lg text-slate-400 hover:text-slate-200 transition-colors"
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            aria-label={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
+            aria-expanded={isSidebarOpen}
           >
             <Menu className="w-6 h-6" />
           </button>
