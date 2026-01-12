@@ -5,7 +5,8 @@ import NoChatsFound from "./NoChatsFound";
 import { useAuthStore } from "../store/useAuthStore";
 
 function ChatsList() {
-  const { getMyChatPartners, chats, isUsersLoading, setSelectedUser } = useChatStore();
+  const { getMyChatPartners, chats, isUsersLoading, setSelectedUser } =
+    useChatStore();
   const { onlineUsers } = useAuthStore();
 
   useEffect(() => {
@@ -20,12 +21,16 @@ function ChatsList() {
       {chats.map((chat) => (
         <div
           key={chat._id}
-          className="bg-cyan-500/10 p-4 rounded-lg cursor-pointer hover:bg-cyan-500/20 transition-colors"
+          className="bg-cyan-500/10 p-3 md:p-4 rounded-lg cursor-pointer hover:bg-cyan-500/20 transition-colors min-h-[60px] flex items-center"
           onClick={() => setSelectedUser(chat)}
         >
-          <div className="flex items-center gap-3">
-            <div className={`avatar ${onlineUsers.includes(chat._id.toString()) ? "online" : "offline"}`}>
-              <div className="size-12 rounded-full">
+          <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
+            <div
+              className={`avatar ${
+                onlineUsers.includes(chat._id.toString()) ? "online" : "offline"
+              }`}
+            >
+              <div className="size-10 md:size-12 rounded-full">
                 <img
                   src={chat.profilePic || "/avatar.png"}
                   alt={chat.fullName}
@@ -35,7 +40,9 @@ function ChatsList() {
                 />
               </div>
             </div>
-            <h4 className="text-slate-200 font-medium truncate">{chat.fullName}</h4>
+            <h4 className="text-slate-200 font-medium truncate text-sm md:text-base">
+              {chat.fullName}
+            </h4>
           </div>
         </div>
       ))}
