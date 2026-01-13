@@ -171,7 +171,7 @@ Convo/
 2. **Set environment variables for production**
    ```env
    NODE_ENV=production
-   PORT=5000
+   PORT=3000
    CLIENT_URL=https://yourdomain.com
    MONGODB_URI=your_production_mongodb_uri
    JWT_SECRET=your_secure_jwt_secret
@@ -193,18 +193,6 @@ Convo/
 - **Arcjet**: Get API key from Arcjet dashboard for security protection
 
 ## 🧪 Testing
-
-### Running Tests
-
-```bash
-# Backend tests
-cd backend
-npm test
-
-# Frontend tests
-cd frontend
-npm test
-```
 
 ### Development Testing
 
