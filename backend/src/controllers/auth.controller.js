@@ -1,4 +1,4 @@
-import { sendWelcomeEmail } from "../emails/emailHandler.js";
+import { sendWelcomeEmail } from "../utils/sendEmail.js";
 import { generateToken } from "../lib/utils.js";
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
@@ -42,15 +42,7 @@ export const signup = async (req, res) => {
         email: savedUser.email,
         profilePic: savedUser.profilePic,
       });
-      try {
-        await sendWelcomeEmail(
-          savedUser.email,
-          savedUser.fullName,
-          ENV.CLIENT_URL
-        );
-      } catch (emailError) {
-        console.error("Error sending welcome email:", emailError);
-      }
+      sendWelcomeEmail(savedUser.email, savedUser.fullName);
     } else {
       return res.status(400).json({ message: "User registration failed" });
     }

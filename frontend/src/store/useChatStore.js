@@ -72,6 +72,12 @@ export const useChatStore=create((set,get)=>({
             isOptimistic:true,
         }
         set({messages:[...messages,optimisticMessage]})
+        const {isSoundEnabled}=get();
+        if(isSoundEnabled){
+            const notificationSound=new Audio("/sounds/notification.mp3");
+            notificationSound.currentTime=0;
+            notificationSound.play().catch((error)=>console.log(error));
+        }
         try {
             const res=await axiosInstance.post(`/messages/send/${selectedUser._id}`,messageData);
             set({messages: messages.concat(res.data.message)})
@@ -82,18 +88,19 @@ export const useChatStore=create((set,get)=>({
     },
 
     subscribeToMessages:()=>{
-        const {selectedUser,isSoundEnabled}=get();
+        const {selectedUser}=get();
         if(!selectedUser){
             return;
         }
-        const socket=useAuthStore.getState().socket;
-        if(!socket) return;
+        const { socket } = useAuthStore.getState();
+        if (!socket) return;
 
         socket.on("newMessage",(newMessage)=>{
             const isMessageSentFromSelectedUser=newMessage.senderId===selectedUser._id;
             if(!isMessageSentFromSelectedUser) return;
             const currentMessages=get().messages;
             set({messages:[...currentMessages,newMessage]});
+            const {isSoundEnabled}=get();
             if(isSoundEnabled){
                 const notificationSound=new Audio("/sounds/notification.mp3");
                 notificationSound.currentTime=0;
@@ -102,9 +109,9 @@ export const useChatStore=create((set,get)=>({
         })
     },
 
-    unsubscribeFromMessages:()=>{
-        const socket=useAuthStore.getState().socket;
-        if(!socket) return;
+    unsubscribeFromMessages: () => {
+        const { socket } = useAuthStore.getState();
+        if (!socket) return;
         socket.off("newMessage");
     },
 

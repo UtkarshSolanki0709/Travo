@@ -1,5 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Routes, Route, Navigate } from "react-router";
+import IntroPage from "./pages/IntroPage";
 import LoginPage from "./pages/LoginPage";
 import SignUpPage from "./pages/SignUpPage";
 import ChatPage from "./pages/ChatPage";
@@ -8,6 +9,8 @@ import PageLoader from "./components/PageLoader";
 import { Toaster } from "react-hot-toast";
 function App() {
   const { checkAuth, isCheckingAuth, authUser, connectSocket } = useAuthStore();
+  const [showIntro, setShowIntro] = useState(true);
+
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
@@ -16,8 +19,21 @@ function App() {
     if (authUser) connectSocket();
   }, [authUser, connectSocket]);
 
+  // Always show intro on first load
+  useEffect(() => {
+    // Only hide intro after user logs in
+    if (authUser) {
+      setShowIntro(false);
+    }
+  }, [authUser]);
+
   if (isCheckingAuth) {
     return <PageLoader />;
+  }
+
+  // Show intro only if user is not authenticated and hasn't skipped it
+  if (showIntro && !authUser) {
+    return <IntroPage setShowIntro={setShowIntro} />;
   }
   return (
     <div className="min-h-screen bg-zinc-900 relative flex items-center justify-center p-4 overflow-hidden">

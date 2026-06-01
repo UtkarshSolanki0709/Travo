@@ -1,3 +1,6 @@
 node_modules
 .env
 .qodo
+convo-blitz
+skills-lock.json
+.agents
