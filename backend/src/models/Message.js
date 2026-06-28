@@ -20,6 +20,23 @@ const messageSchema = new mongoose.Schema(
     image: {
       type: String,
     },
+    seen: {
+      type: Boolean,
+      default: false,
+    },
+    media: [
+      {
+        url: {
+          type: String,
+          required: true,
+        },
+        type: {
+          type: String,
+          enum: ["image", "video", "gif"],
+          required: true,
+        },
+      },
+    ],
   },
   { timestamps: true }
 );

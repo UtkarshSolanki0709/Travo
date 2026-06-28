@@ -44,6 +44,11 @@ function ChatsList() {
               {chat.fullName}
             </h4>
           </div>
+          {chat.unseenCount > 0 && (
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-violet-600 px-1.5 text-[10px] font-bold text-white shadow-sm ring-1 ring-violet-400 ml-2 shrink-0">
+              {chat.unseenCount}
+            </span>
+          )}
         </div>
       ))}
     </>

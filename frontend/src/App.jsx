@@ -5,10 +5,12 @@ import LoginPage from "./pages/LoginPage";
 import SignUpPage from "./pages/SignUpPage";
 import ChatPage from "./pages/ChatPage";
 import { useAuthStore } from "./store/useAuthStore";
+import { useChatStore } from "./store/useChatStore";
 import PageLoader from "./components/PageLoader";
 import { Toaster } from "react-hot-toast";
 function App() {
-  const { checkAuth, isCheckingAuth, authUser, connectSocket } = useAuthStore();
+  const { checkAuth, isCheckingAuth, authUser, connectSocket, socket } = useAuthStore();
+  const { subscribeToMessages, unsubscribeFromMessages } = useChatStore();
   const [showIntro, setShowIntro] = useState(true);
 
   useEffect(() => {
@@ -19,11 +21,19 @@ function App() {
     if (authUser) connectSocket();
   }, [authUser, connectSocket]);
 
+  useEffect(() => {
+    if (socket) {
+      subscribeToMessages();
+      return () => unsubscribeFromMessages();
+    }
+  }, [socket, subscribeToMessages, unsubscribeFromMessages]);
+
   // Always show intro on first load
   useEffect(() => {
     // Only hide intro after user logs in
     if (authUser) {
-      setShowIntro(false);
+      const timer = setTimeout(() => setShowIntro(false), 0);
+      return () => clearTimeout(timer);
     }
   }, [authUser]);
 
