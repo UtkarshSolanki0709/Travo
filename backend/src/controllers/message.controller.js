@@ -152,7 +152,7 @@ export const getAllChatPartners = async (req, res) => {
         const loggedInUserId = req.user._id;
         const messages=await Message.find({
             $or:[{senderId:loggedInUserId},{receiverId:loggedInUserId}]
-        })
+        }).sort({ createdAt: -1 });
         const chatPartnerIds = [
             ...new Set(messages.map(
             (msg) => msg.senderId.toString() === loggedInUserId.toString() 
@@ -182,7 +182,17 @@ export const getAllChatPartners = async (req, res) => {
           return partnerObj;
         });
 
-        res.status(200).json({ chatPartners: partnersWithUnseen });
+        // Maintain the order of chatPartnerIds
+        const partnerMap = {};
+        partnersWithUnseen.forEach(partner => {
+            partnerMap[partner._id.toString()] = partner;
+        });
+
+        const orderedPartners = chatPartnerIds
+            .map(id => partnerMap[id])
+            .filter(Boolean);
+
+        res.status(200).json({ chatPartners: orderedPartners });
     } catch (error) {
         console.error("Get All Chat Partners Error:", error);
         res.status(500).json({ message: "Server Error" });

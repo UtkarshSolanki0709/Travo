@@ -101,7 +101,33 @@ export const useChatStore=create((set,get)=>({
             createdAt:new Date().toISOString(),
             isOptimistic:true,
         }
-        set({messages:[...messages,optimisticMessage]})
+
+        // Move selectedUser to the top of the chats list
+        const { chats, allContacts } = get();
+        const partnerInChats = chats.find(c => c._id === selectedUser._id);
+        let updatedPartner;
+        if (partnerInChats) {
+            updatedPartner = { ...partnerInChats, unseenCount: 0 };
+        } else {
+            const partnerInContacts = allContacts.find(c => c._id === selectedUser._id);
+            if (partnerInContacts) {
+                updatedPartner = { ...partnerInContacts, unseenCount: 0 };
+            } else {
+                updatedPartner = {
+                    _id: selectedUser._id,
+                    fullName: selectedUser.fullName,
+                    profilePic: selectedUser.profilePic,
+                    unseenCount: 0
+                };
+            }
+        }
+        const remainingChats = chats.filter(c => c._id !== selectedUser._id);
+        const updatedChats = [updatedPartner, ...remainingChats];
+
+        set({
+            messages: [...messages, optimisticMessage],
+            chats: updatedChats
+        });
 
         const {isSoundEnabled}=get();
         if(isSoundEnabled){
@@ -183,48 +209,23 @@ export const useChatStore=create((set,get)=>({
             const { selectedUser, messages, chats, allContacts } = get();
             
             const isMessageSentFromSelectedUser = selectedUser && newMessage.senderId === selectedUser._id;
-            
+            const partnerId = newMessage.senderId;
+
+            // 1. Play sound
+            const { isSoundEnabled } = get();
+            if (isSoundEnabled) {
+                const notificationSound = new Audio("/sounds/notification.mp3");
+                notificationSound.currentTime = 0;
+                notificationSound.play().catch((error) => console.log(error));
+            }
+
+            // 2. Update message list if from selected user
             if (isMessageSentFromSelectedUser) {
                 set({ messages: [...messages, newMessage] });
                 
                 // Mark message as seen in database
                 axiosInstance.put(`/messages/mark-as-seen/${selectedUser._id}`).catch(err => console.error(err));
-                
-                const { isSoundEnabled } = get();
-                if (isSoundEnabled) {
-                    const notificationSound = new Audio("/sounds/notification.mp3");
-                    notificationSound.currentTime = 0;
-                    notificationSound.play().catch((error) => console.log(error));
-                }
             } else {
-                // Message is from another user or user has no active chat open
-                const { isSoundEnabled } = get();
-                if (isSoundEnabled) {
-                    const notificationSound = new Audio("/sounds/notification.mp3");
-                    notificationSound.currentTime = 0;
-                    notificationSound.play().catch((error) => console.log(error));
-                }
-
-                // Increment unseenCount locally in chats and allContacts
-                const updatedChats = chats.map(chat => 
-                    chat._id === newMessage.senderId 
-                        ? { ...chat, unseenCount: (chat.unseenCount || 0) + 1 }
-                        : chat
-                );
-                const updatedContacts = allContacts.map(contact => 
-                    contact._id === newMessage.senderId 
-                        ? { ...contact, unseenCount: (contact.unseenCount || 0) + 1 }
-                        : contact
-                );
-                
-                // If the sender is not in the current chats list, refresh chats list
-                const senderInChats = chats.some(chat => chat._id === newMessage.senderId);
-                if (!senderInChats) {
-                    get().getMyChatPartners();
-                } else {
-                    set({ chats: updatedChats, allContacts: updatedContacts });
-                }
-
                 // Push toast notification
                 const senderName = newMessage.senderInfo?.fullName || "Someone";
                 const timeStr = new Date(newMessage.createdAt).toLocaleTimeString("en-US", {
@@ -234,6 +235,49 @@ export const useChatStore=create((set,get)=>({
                 });
                 toast(`Message from ${senderName} (${timeStr}): ${newMessage.text || "📷 Image"}`);
             }
+
+            // 3. Update chats list and move partner to the top
+            const partnerInChats = chats.find(c => c._id === partnerId);
+            let updatedPartner;
+            
+            if (partnerInChats) {
+                updatedPartner = {
+                    ...partnerInChats,
+                    unseenCount: isMessageSentFromSelectedUser ? 0 : (partnerInChats.unseenCount || 0) + 1
+                };
+            } else {
+                const partnerInContacts = allContacts.find(c => c._id === partnerId);
+                if (partnerInContacts) {
+                    updatedPartner = {
+                        ...partnerInContacts,
+                        unseenCount: isMessageSentFromSelectedUser ? 0 : 1
+                    };
+                } else {
+                    // Create temporary partner object using senderInfo from socket message payload
+                    updatedPartner = {
+                        _id: partnerId,
+                        fullName: newMessage.senderInfo?.fullName || "Someone",
+                        profilePic: newMessage.senderInfo?.profilePic || "",
+                        unseenCount: isMessageSentFromSelectedUser ? 0 : 1
+                    };
+                }
+            }
+
+            const remainingChats = chats.filter(c => c._id !== partnerId);
+            const updatedChats = [updatedPartner, ...remainingChats];
+
+            // 4. Update allContacts unseen count
+            const updatedContacts = allContacts.map(contact => {
+                if (contact._id === partnerId) {
+                    return {
+                        ...contact,
+                        unseenCount: isMessageSentFromSelectedUser ? 0 : (contact.unseenCount || 0) + 1
+                    };
+                }
+                return contact;
+            });
+
+            set({ chats: updatedChats, allContacts: updatedContacts });
         });
 
         // Offline notifications when user connects
