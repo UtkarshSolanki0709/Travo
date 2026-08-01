@@ -1,12 +1,18 @@
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native'
-import { User } from '@/services/database'
+import { User } from "@/services/database";
+import {
+    ActivityIndicator,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from "react-native";
 
 interface EditProfileFormProps {
-  editingData: Partial<User>
-  saving: boolean
-  onDataChange: (data: Partial<User>) => void
-  onSave: () => void
-  onCancel: () => void
+  editingData: Partial<User>;
+  saving: boolean;
+  onDataChange: (data: Partial<User>) => void;
+  onSave: () => void;
+  onCancel: () => void;
 }
 
 export default function EditProfileForm({
@@ -14,58 +20,66 @@ export default function EditProfileForm({
   saving,
   onDataChange,
   onSave,
-  onCancel
+  onCancel,
 }: EditProfileFormProps) {
   return (
     <View className="w-full px-2.5">
       <TextInput
-        className="bg-white border border-slate-200 rounded-xl p-3 mb-3 text-base text-slate-800"
+        className="bg-input-background border border-border-divider rounded-xl p-3 mb-3 text-base text-text-primary focus:border-input-focus"
         placeholder="Display Name"
-        value={editingData.display_name || ''}
-        onChangeText={(text) => onDataChange({ ...editingData, display_name: text })}
+        placeholderTextColor="var(--color-text-disabled)"
+        value={editingData.display_name || ""}
+        onChangeText={(text) =>
+          onDataChange({ ...editingData, display_name: text })
+        }
       />
       <TextInput
-        className="bg-white border border-slate-200 rounded-xl p-3 mb-3 text-base text-slate-800 h-20"
+        className="bg-input-background border border-border-divider rounded-xl p-3 mb-3 text-base text-text-primary h-20 focus:border-input-focus"
         placeholder="Bio"
+        placeholderTextColor="var(--color-text-disabled)"
         multiline
         numberOfLines={3}
         textAlignVertical="top"
-        value={editingData.bio || ''}
+        value={editingData.bio || ""}
         onChangeText={(text) => onDataChange({ ...editingData, bio: text })}
       />
       <View className="flex-row mb-3">
         <TextInput
-          className="flex-1 bg-white border border-slate-200 rounded-xl p-3 text-base text-slate-800 mr-2"
+          className="flex-1 bg-input-background border border-border-divider rounded-xl p-3 text-base text-text-primary mr-2 focus:border-input-focus"
           placeholder="City"
-          value={editingData.city || ''}
+          placeholderTextColor="var(--color-text-disabled)"
+          value={editingData.city || ""}
           onChangeText={(text) => onDataChange({ ...editingData, city: text })}
         />
         <TextInput
-          className="flex-1 bg-white border border-slate-200 rounded-xl p-3 text-base text-slate-800"
+          className="flex-1 bg-input-background border border-border-divider rounded-xl p-3 text-base text-text-primary focus:border-input-focus"
           placeholder="Country"
-          value={editingData.country || ''}
-          onChangeText={(text) => onDataChange({ ...editingData, country: text })}
+          placeholderTextColor="var(--color-text-disabled)"
+          value={editingData.country || ""}
+          onChangeText={(text) =>
+            onDataChange({ ...editingData, country: text })
+          }
         />
       </View>
       <View className="flex-row gap-3 mt-2">
-        <TouchableOpacity 
-          className="flex-1 p-3.5 rounded-xl items-center bg-slate-100" 
+        <TouchableOpacity
+          className="flex-1 p-3.5 rounded-xl items-center bg-background-elevated active:bg-background-elevated/80"
           onPress={onCancel}
         >
-          <Text className="text-slate-600 font-semibold">Cancel</Text>
+          <Text className="text-text-secondary font-semibold">Cancel</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-          className="flex-1 p-3.5 rounded-xl items-center bg-indigo-500" 
+        <TouchableOpacity
+          className="flex-1 p-3.5 rounded-xl items-center bg-brand-primary active:bg-brand-primary-pressed"
           onPress={onSave}
           disabled={saving}
         >
           {saving ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color="var(--color-text-on-primary)" />
           ) : (
-            <Text className="text-white font-semibold">Save</Text>
+            <Text className="text-text-on-primary font-bold">Save</Text>
           )}
         </TouchableOpacity>
       </View>
     </View>
-  )
+  );
 }

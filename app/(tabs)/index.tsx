@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  FlatList,
-  Keyboard,
-  Modal,
-  Pressable,
-  Switch,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    FlatList,
+    Keyboard,
+    Modal,
+    Pressable,
+    Switch,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 import MapComponent, { Marker } from "@/components/MapComponent";
@@ -317,21 +317,21 @@ export default function Index() {
 
       <View className="absolute right-4 top-12 z-30">
         <TouchableOpacity
-          className="h-11 w-11 items-center justify-center rounded-full bg-white shadow-lg"
+          className="h-11 w-11 items-center justify-center rounded-full bg-background-surface shadow-lg border border-border-divider/50"
           onPress={() => setIsMenuOpen(true)}
         >
-          <Ionicons name="menu" size={24} color="#0f172a" />
+          <Ionicons name="menu" size={24} color="var(--color-text-primary)" />
         </TouchableOpacity>
       </View>
 
       {/* Search Box */}
-      <View className="absolute left-4 right-16 top-12 z-20 rounded-2xl bg-white/95 p-3 shadow-lg">
+      <View className="absolute left-4 right-16 top-12 z-20 rounded-2xl bg-background-surface/95 border border-border-divider/50 p-3 shadow-lg">
         <TextInput
           placeholder="Search for a place, cafe, etc..."
-          placeholderTextColor="#94a3b8"
+          placeholderTextColor="var(--color-text-disabled)"
           value={query}
           onChangeText={handleSearch}
-          className="h-11 rounded-xl bg-slate-100 px-4 text-base text-slate-900"
+          className="h-11 rounded-xl bg-input-background px-4 text-base text-text-primary border border-border-divider focus:border-input-focus"
         />
 
         <FlatList
@@ -341,10 +341,10 @@ export default function Index() {
           className="mt-2 max-h-56"
           renderItem={({ item }) => (
             <TouchableOpacity
-              className="border-b border-slate-100 py-3"
+              className="border-b border-border-divider/50 py-3"
               onPress={() => handleSelect(item)}
             >
-              <Text className="text-sm text-slate-700" numberOfLines={2}>
+              <Text className="text-sm text-text-primary" numberOfLines={2}>
                 {item.place_name}
               </Text>
             </TouchableOpacity>
@@ -357,30 +357,45 @@ export default function Index() {
           className="flex-1 bg-slate-900/20"
           onPress={() => setIsMenuOpen(false)}
         />
-        <View className="absolute right-4 top-24 w-72 rounded-2xl bg-white p-4 shadow-xl">
+        <View className="absolute right-4 top-24 w-72 rounded-2xl bg-background-surface p-4 shadow-xl border border-border-divider">
           <View className="mb-3 flex-row items-center justify-between">
-            <Text className="text-base font-semibold text-slate-900">
+            <Text className="text-base font-semibold text-text-primary">
               Map Menu
             </Text>
             <TouchableOpacity onPress={() => setIsMenuOpen(false)}>
-              <Ionicons name="close" size={20} color="#64748b" />
+              <Ionicons
+                name="close"
+                size={20}
+                color="var(--color-text-secondary)"
+              />
             </TouchableOpacity>
           </View>
 
-          <View className="mb-3 rounded-xl bg-slate-50 px-3 py-3">
-            <Text className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <View className="mb-3 rounded-xl bg-background-elevated px-3 py-3 border border-border-divider/50">
+            <Text className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-disabled">
               Quick Settings
             </Text>
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center">
-                <Ionicons name="location-outline" size={20} color="#6366f1" />
-                <Text className="ml-2 text-sm font-semibold text-slate-800">
+                <Ionicons
+                  name="location-outline"
+                  size={20}
+                  color="var(--color-primary)"
+                />
+                <Text className="ml-2 text-sm font-semibold text-text-primary">
                   Live Tracking
                 </Text>
               </View>
               <Switch
-                trackColor={{ false: "#e2e8f0", true: "#a5b4fc" }}
-                thumbColor={isLocationEnabled ? "#6366f1" : "#f1f5f9"}
+                trackColor={{
+                  false: "var(--color-border-divider)",
+                  true: "var(--color-primary-light)",
+                }}
+                thumbColor={
+                  isLocationEnabled
+                    ? "var(--color-primary)"
+                    : "var(--color-background-surface)"
+                }
                 onValueChange={handleToggleLocation}
                 value={isLocationEnabled}
                 disabled={!clerkUser}
@@ -396,27 +411,35 @@ export default function Index() {
             }}
           >
             <View className="flex-row items-center">
-              <Ionicons name="person-outline" size={20} color="#6366f1" />
-              <Text className="ml-2 text-sm font-semibold text-slate-800">
+              <Ionicons
+                name="person-outline"
+                size={20}
+                color="var(--color-primary)"
+              />
+              <Text className="ml-2 text-sm font-semibold text-text-primary">
                 Account Settings
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color="#cbd5e1" />
+            <Ionicons
+              name="chevron-forward"
+              size={18}
+              color="var(--color-text-disabled)"
+            />
           </TouchableOpacity>
 
           {clerkUser ? (
-            <View className="mt-2 rounded-xl bg-slate-50">
+            <View className="mt-2 rounded-xl bg-background-elevated">
               <SignOutButton />
             </View>
           ) : (
             <TouchableOpacity
-              className="mt-2 rounded-xl bg-indigo-50 px-4 py-3"
+              className="mt-2 rounded-xl bg-brand-primary/10 px-4 py-3"
               onPress={() => {
                 setIsMenuOpen(false);
                 router.push("/sign-in");
               }}
             >
-              <Text className="text-sm font-semibold text-indigo-600">
+              <Text className="text-sm font-semibold text-brand-primary">
                 Sign in to access more settings
               </Text>
             </TouchableOpacity>
@@ -427,10 +450,10 @@ export default function Index() {
               <Ionicons
                 name="information-circle-outline"
                 size={16}
-                color="#94a3b8"
+                color="var(--color-text-disabled)"
               />
             </View>
-            <Text className="text-xs text-slate-400">
+            <Text className="text-xs text-text-disabled">
               Your approximate location is shared, not your exact address.
             </Text>
           </View>

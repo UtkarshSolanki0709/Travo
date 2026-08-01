@@ -4,14 +4,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { VideoView } from "expo-video";
 import { useState } from "react";
 import {
-  Alert,
-  Image,
-  Modal,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    Image,
+    Modal,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 interface PostDetailModalProps {
@@ -104,8 +104,8 @@ export default function PostDetailModal({
       onRequestClose={onClose}
     >
       <View className="flex-1 bg-black/80 justify-center p-5">
-        <View className="bg-white rounded-3xl max-h-[90%] overflow-hidden">
-          <View className="flex-row justify-between items-center p-4 border-b border-slate-100">
+        <View className="bg-background-surface rounded-3xl max-h-[90%] overflow-hidden border border-border-divider shadow-custom">
+          <View className="flex-row justify-between items-center p-4 border-b border-border-divider bg-background-surface">
             <View className="flex-row items-center gap-3">
               {post?.user?.avatar_url ? (
                 <Image
@@ -113,14 +113,18 @@ export default function PostDetailModal({
                   className="w-10 h-10 rounded-full"
                 />
               ) : (
-                <Ionicons name="person-circle" size={40} color="#6366f1" />
+                <Ionicons
+                  name="person-circle"
+                  size={40}
+                  color="var(--color-primary)"
+                />
               )}
               <View>
-                <Text className="font-bold text-base text-slate-800">
+                <Text className="font-bold text-base text-text-primary">
                   {post?.user?.display_name || "User"}
                 </Text>
                 {post?.location_name && (
-                  <Text className="text-xs text-indigo-500">
+                  <Text className="text-xs text-brand-primary font-medium">
                     {post.location_name}
                   </Text>
                 )}
@@ -134,34 +138,48 @@ export default function PostDetailModal({
                   <Ionicons
                     name="ellipsis-horizontal"
                     size={24}
-                    color="#64748b"
+                    color="var(--color-text-secondary)"
                   />
                 </TouchableOpacity>
               )}
               <TouchableOpacity onPress={onClose}>
-                <Ionicons name="close" size={24} color="#64748b" />
+                <Ionicons
+                  name="close"
+                  size={24}
+                  color="var(--color-text-secondary)"
+                />
               </TouchableOpacity>
             </View>
           </View>
 
           {showPostOptions && isMyPost && (
-            <View className="bg-slate-50 border-b border-slate-200">
+            <View className="bg-background-elevated border-b border-border-divider">
               <TouchableOpacity
-                className="flex-row items-center p-4 gap-3"
+                className="flex-row items-center p-4 gap-3 active:bg-background-surface"
                 onPress={() => {
                   onEditPost();
                   setShowPostOptions(false);
                 }}
               >
-                <Ionicons name="create-outline" size={20} color="#6366f1" />
-                <Text className="text-slate-700 font-medium">Edit Post</Text>
+                <Ionicons
+                  name="create-outline"
+                  size={20}
+                  color="var(--color-primary)"
+                />
+                <Text className="text-text-primary font-medium">Edit Post</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className="flex-row items-center p-4 gap-3 border-t border-slate-200"
+                className="flex-row items-center p-4 gap-3 border-t border-border-divider active:bg-background-surface"
                 onPress={handleDeletePost}
               >
-                <Ionicons name="trash-outline" size={20} color="#ef4444" />
-                <Text className="text-red-600 font-medium">Delete Post</Text>
+                <Ionicons
+                  name="trash-outline"
+                  size={20}
+                  color="var(--color-danger)"
+                />
+                <Text className="text-status-danger font-medium">
+                  Delete Post
+                </Text>
               </TouchableOpacity>
             </View>
           )}
@@ -193,23 +211,27 @@ export default function PostDetailModal({
                   <Ionicons
                     name={post?.is_liked ? "heart" : "heart-outline"}
                     size={28}
-                    color={post?.is_liked ? "#ef4444" : "#64748b"}
+                    color={
+                      post?.is_liked
+                        ? "var(--color-danger)"
+                        : "var(--color-text-secondary)"
+                    }
                   />
                 </TouchableOpacity>
                 <TouchableOpacity className="p-1">
                   <Ionicons
                     name="chatbubble-outline"
                     size={26}
-                    color="#64748b"
+                    color="var(--color-text-secondary)"
                   />
                 </TouchableOpacity>
               </View>
 
               {post?.text && (
-                <Text className="text-[15px] text-slate-800 leading-5 mb-5">
+                <Text className="text-[15px] text-text-primary leading-5 mb-5">
                   <Text className="font-bold">{post?.user?.display_name} </Text>
                   {post.venue_name && (
-                    <Text className="text-indigo-500 font-semibold">
+                    <Text className="text-brand-primary font-semibold">
                       at {post.venue_name}{" "}
                     </Text>
                   )}
@@ -217,8 +239,8 @@ export default function PostDetailModal({
                 </Text>
               )}
 
-              <View className="border-t border-slate-100 pt-4">
-                <Text className="text-sm font-semibold text-slate-500 mb-3">
+              <View className="border-t border-border-divider pt-4">
+                <Text className="text-sm font-semibold text-text-secondary mb-3">
                   Comments
                 </Text>
                 {comments.map((comment) => (
@@ -241,10 +263,10 @@ export default function PostDetailModal({
                       <View className="flex-1">
                         <View className="flex-row justify-between items-start">
                           <View className="flex-1">
-                            <Text className="font-bold text-[13px] text-slate-800">
+                            <Text className="font-bold text-[13px] text-text-primary">
                               {comment.user?.display_name}
                             </Text>
-                            <Text className="text-[13px] text-slate-600 mt-0.5">
+                            <Text className="text-[13px] text-text-secondary mt-0.5">
                               {comment.text}
                             </Text>
                           </View>
@@ -265,7 +287,7 @@ export default function PostDetailModal({
                           <TouchableOpacity
                             onPress={() => setReplyingTo(comment.id)}
                           >
-                            <Text className="text-xs text-slate-500 font-medium">
+                            <Text className="text-xs text-text-secondary font-medium">
                               Reply
                             </Text>
                           </TouchableOpacity>
@@ -307,20 +329,24 @@ export default function PostDetailModal({
             </View>
           </ScrollView>
 
-          <View className="flex-row items-center p-3 border-t border-slate-100 gap-3">
+          <View className="flex-row items-center p-3 border-t border-border-divider gap-3 bg-background-surface">
             <TextInput
-              className="flex-1 bg-slate-50 rounded-full px-4 py-2 text-sm"
+              className="flex-1 bg-background-elevated rounded-full px-4 py-2 text-sm text-text-primary border border-border-divider shadow-sm"
               placeholder="Add a comment..."
+              placeholderTextColor="var(--color-text-disabled)"
               value={newComment}
               onChangeText={onCommentChange}
             />
             <TouchableOpacity
               onPress={onAddComment}
               disabled={socialLoading || !newComment.trim()}
+              className="px-2"
             >
               <Text
-                className={`font-bold text-sm ${
-                  !newComment.trim() ? "text-indigo-300" : "text-indigo-500"
+                className={`font-bold text-base ${
+                  !newComment.trim()
+                    ? "text-text-disabled"
+                    : "text-brand-primary"
                 }`}
               >
                 Post

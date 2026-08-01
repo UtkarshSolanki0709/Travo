@@ -666,15 +666,15 @@ export default function ProfileScreen() {
 
   if (clerkUser && loading) {
     return (
-      <View className="flex-1 bg-slate-50 justify-center items-center">
-        <ActivityIndicator size="large" color="#6366f1" />
+      <View className="flex-1 bg-background-app justify-center items-center">
+        <ActivityIndicator size="large" color="var(--color-primary)" />
       </View>
     );
   }
 
   return (
     <ScrollView
-      className="flex-1 bg-slate-50"
+      className="flex-1 bg-background-app"
       contentContainerStyle={{ padding: 24, paddingTop: 60 }}
     >
       <SignedIn>

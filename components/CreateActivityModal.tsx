@@ -1,3 +1,4 @@
+import AnimatedPressable from "@/components/ui/AnimatedPressable";
 import {
   database,
   type Activity,
@@ -9,19 +10,76 @@ import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
+  Animated,
   KeyboardAvoidingView,
   Modal,
   Platform,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
+
+/** A chip that bounces when toggled */
+function AnimatedChip({
+  label,
+  icon,
+  isSelected,
+  onPress,
+}: {
+  label: string;
+  icon: string;
+  isSelected: boolean;
+  onPress: () => void;
+}) {
+  const chipScale = useRef(new Animated.Value(1)).current;
+
+  const handlePress = useCallback(() => {
+    Animated.sequence([
+      Animated.spring(chipScale, {
+        toValue: 1.15,
+        useNativeDriver: true,
+        speed: 60,
+        bounciness: 8,
+      }),
+      Animated.spring(chipScale, {
+        toValue: 1,
+        useNativeDriver: true,
+        speed: 40,
+        bounciness: 6,
+      }),
+    ]).start();
+    onPress();
+  }, [chipScale, onPress]);
+
+  return (
+    <Animated.View style={{ transform: [{ scale: chipScale }] }}>
+      <TouchableOpacity
+        onPress={handlePress}
+        className={`flex-row items-center rounded-full border px-[15px] py-2 ${
+          isSelected
+            ? "bg-brand-primary border-brand-primary"
+            : "bg-background-surface border-border-divider"
+        }`}
+      >
+        <Ionicons
+          name={icon as any}
+          size={14}
+          color={isSelected ? "white" : "var(--color-text-secondary)"}
+        />
+        <Text
+          className={`ml-2 text-[13px] font-bold ${isSelected ? "text-text-on-primary" : "text-text-secondary"}`}
+        >
+          {label}
+        </Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
 
 interface CreateActivityModalProps {
   visible: boolean;
@@ -243,46 +301,51 @@ export default function CreateActivityModal({
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.container}
+        className="flex-1 bg-background-app"
       >
         <LinearGradient
           colors={["#4f46e5", "#7c3aed"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
-          style={styles.header}
+          className="px-5 pt-[50px] pb-[25px]"
         >
-          <View style={styles.headerTop}>
+          <View className="flex-row items-center justify-between mb-[15px]">
             <TouchableOpacity
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 onClose();
               }}
-              style={styles.closeButton}
+              className="bg-white/20 p-2.5 rounded-full"
             >
               <Ionicons name="close" size={24} color="white" />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>
+            <Text className="text-white text-[22px] font-extrabold">
               {initialData ? "Edit Activity" : "New Activity"}
             </Text>
             <TouchableOpacity
               onPress={handleCreate}
               disabled={isSubmitting}
-              style={[styles.createButton, isSubmitting && { opacity: 0.5 }]}
+              className={`bg-background-surface px-[18px] py-2 rounded-[15px] ${isSubmitting ? "opacity-50" : ""}`}
             >
-              <Text style={styles.createButtonText}>
+              <Text className="text-brand-primary font-extrabold text-sm">
                 {isSubmitting ? "..." : initialData ? "Update" : "Create"}
               </Text>
             </TouchableOpacity>
           </View>
 
           {!initialData && initialLocation && (
-            <View style={styles.locationBadge}>
-              <View style={styles.locationIconWrapper}>
+            <View className="bg-white/15 rounded-[20px] p-3 flex-row items-center border border-white/20">
+              <View className="bg-white/20 p-1.5 rounded-[10px] mr-3">
                 <Ionicons name="location" size={18} color="white" />
               </View>
-              <View style={styles.locationTextWrapper}>
-                <Text style={styles.locationLabel}>Location Verified</Text>
-                <Text style={styles.locationValue} numberOfLines={1}>
+              <View className="flex-1">
+                <Text className="text-white/60 text-[10px] font-extrabold uppercase tracking-wide">
+                  Location Verified
+                </Text>
+                <Text
+                  className="text-white text-[13px] font-bold"
+                  numberOfLines={1}
+                >
                   {initialLocation.city || "Selected location"}
                 </Text>
               </View>
@@ -291,70 +354,83 @@ export default function CreateActivityModal({
         </LinearGradient>
 
         <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
+          className="flex-1"
+          contentContainerStyle={{ paddingBottom: 50 }}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.padding}>
+          <View className="px-5">
             {/* Title & Description */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <View
-                  style={[styles.sectionIcon, { backgroundColor: "#eef2ff" }]}
-                >
-                  <Ionicons name="sparkles" size={20} color="#6366f1" />
+            <View className="mt-[30px]">
+              <View className="flex-row items-center mb-[15px]">
+                <View className="p-2 rounded-[12px] mr-3 bg-brand-primary/10">
+                  <Ionicons
+                    name="sparkles"
+                    size={20}
+                    color="var(--color-primary)"
+                  />
                 </View>
-                <Text style={styles.sectionTitle}>What{"'"}s the plan?</Text>
+                <Text className="text-lg font-extrabold text-text-primary">
+                  What{"'"}s the plan?
+                </Text>
               </View>
 
-              <View style={styles.inputCard}>
+              <View className="bg-input-background rounded-[24px] border border-border-divider overflow-hidden">
                 <TextInput
                   value={title}
                   onChangeText={setTitle}
                   placeholder="Activity Title"
-                  placeholderTextColor="#94a3b8"
-                  style={styles.titleInput}
+                  placeholderTextColor="var(--color-text-disabled)"
+                  className="px-5 py-[18px] text-base font-bold text-text-primary"
                   maxLength={100}
                 />
-                <View style={styles.divider} />
+                <View className="h-px bg-border-divider mx-5" />
                 <TextInput
                   value={description}
                   onChangeText={setDescription}
                   placeholder="Details..."
-                  placeholderTextColor="#94a3b8"
+                  placeholderTextColor="var(--color-text-disabled)"
                   multiline
-                  style={styles.descInput}
+                  className="px-5 py-[18px] text-[15px] text-text-secondary min-h-[120px]"
+                  textAlignVertical="top"
                   maxLength={500}
                 />
               </View>
             </View>
 
             {/* Category & Time */}
-            <View style={styles.row}>
-              <View style={styles.flex1}>
-                <Text style={styles.label}>Category</Text>
-                <View style={styles.simpleInput}>
+            <View className="flex-row gap-3 mt-5">
+              <View className="flex-1">
+                <Text className="text-[11px] font-extrabold text-text-disabled mb-2 uppercase tracking-tight">
+                  Category
+                </Text>
+                <View className="bg-input-background rounded-[20px] border border-border-divider px-4 py-3.5 min-h-[56px] justify-center focus-within:border-input-focus">
                   <TextInput
                     value={activityType}
                     onChangeText={setActivityType}
                     placeholder="e.g., Sport"
-                    placeholderTextColor="#cbd5e1"
-                    style={styles.textInputBold}
+                    placeholderTextColor="var(--color-text-disabled)"
+                    className="text-[15px] font-bold text-text-primary"
                   />
                 </View>
               </View>
-              <View style={styles.flex1}>
-                <Text style={styles.label}>Start Time</Text>
+              <View className="flex-1">
+                <Text className="text-[11px] font-extrabold text-text-disabled mb-2 uppercase tracking-tight">
+                  Start Time
+                </Text>
                 <TouchableOpacity
                   onPress={() => setShowDatePicker(true)}
-                  style={styles.simpleInput}
+                  className="bg-input-background rounded-[20px] border border-border-divider px-4 py-3.5 min-h-[56px] justify-center"
                 >
-                  <View style={styles.rowBetween}>
-                    <Text style={styles.textInputBold}>
+                  <View className="flex-row items-center justify-between">
+                    <Text className="text-[15px] font-bold text-text-primary">
                       {startTime.getHours()}:
                       {startTime.getMinutes().toString().padStart(2, "0")}
                     </Text>
-                    <Ionicons name="time" size={18} color="#6366f1" />
+                    <Ionicons
+                      name="time"
+                      size={18}
+                      color="var(--color-primary)"
+                    />
                   </View>
                 </TouchableOpacity>
               </View>
@@ -362,21 +438,31 @@ export default function CreateActivityModal({
 
             <TouchableOpacity
               onPress={() => setShowDatePicker(true)}
-              style={styles.dateCard}
+              className="bg-brand-primary/10 rounded-[20px] border border-brand-primary/20 p-4 mt-5"
             >
-              <View style={styles.rowBetween}>
-                <View style={styles.rowCenter}>
-                  <View style={styles.dateIconWrapper}>
-                    <Ionicons name="calendar" size={20} color="#6366f1" />
+              <View className="flex-row items-center justify-between">
+                <View className="flex-row items-center">
+                  <View className="bg-background-surface p-2 rounded-[10px] mr-[15px] shadow-sm">
+                    <Ionicons
+                      name="calendar"
+                      size={20}
+                      color="var(--color-primary)"
+                    />
                   </View>
                   <View>
-                    <Text style={styles.dateLabel}>Scheduled For</Text>
-                    <Text style={styles.dateValue}>
+                    <Text className="text-[10px] font-extrabold text-brand-primary uppercase">
+                      Scheduled For
+                    </Text>
+                    <Text className="text-[15px] font-extrabold text-text-primary">
                       {formatDateTime(startTime)}
                     </Text>
                   </View>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color="#cbd5e1" />
+                <Ionicons
+                  name="chevron-forward"
+                  size={18}
+                  color="var(--color-text-disabled)"
+                />
               </View>
             </TouchableOpacity>
 
@@ -392,17 +478,21 @@ export default function CreateActivityModal({
             )}
 
             {/* Capacity */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <View
-                  style={[styles.sectionIcon, { backgroundColor: "#ecfdf5" }]}
-                >
-                  <Ionicons name="people" size={20} color="#10b981" />
+            <View className="mt-[30px]">
+              <View className="flex-row items-center mb-[15px]">
+                <View className="p-2 rounded-[12px] mr-3 bg-status-success/10">
+                  <Ionicons
+                    name="people"
+                    size={20}
+                    color="var(--color-success)"
+                  />
                 </View>
-                <Text style={styles.sectionTitle}>Capacity</Text>
+                <Text className="text-lg font-extrabold text-text-primary">
+                  Capacity
+                </Text>
               </View>
 
-              <View style={styles.row}>
+              <View className="flex-row gap-3 mt-5">
                 {SIZE_OPTIONS.map((size) => (
                   <TouchableOpacity
                     key={size.value}
@@ -410,21 +500,27 @@ export default function CreateActivityModal({
                       selectionHaptic();
                       setSizeType(size.value);
                     }}
-                    style={[
-                      styles.sizeOption,
-                      sizeType === size.value && styles.sizeOptionSelected,
-                    ]}
+                    className={`flex-1 bg-background-surface rounded-[20px] border p-[15px] items-center shadow-sm ${
+                      sizeType === size.value
+                        ? "bg-status-success/10 border-status-success"
+                        : "border-border-divider"
+                    }`}
                   >
                     <Ionicons
                       name={size.icon as any}
                       size={22}
-                      color={sizeType === size.value ? "#10b981" : "#94a3b8"}
+                      color={
+                        sizeType === size.value
+                          ? "var(--color-success)"
+                          : "var(--color-text-disabled)"
+                      }
                     />
                     <Text
-                      style={[
-                        styles.sizeLabelSmall,
-                        sizeType === size.value && { color: "#10b981" },
-                      ]}
+                      className={`text-[12px] font-bold mt-2 ${
+                        sizeType === size.value
+                          ? "text-status-success"
+                          : "text-text-secondary"
+                      }`}
                     >
                       {size.label}
                     </Text>
@@ -432,67 +528,69 @@ export default function CreateActivityModal({
                 ))}
               </View>
 
-              <View style={styles.capacityInput}>
-                <View style={styles.flex1}>
-                  <Text style={styles.labelSmall}>Maximum Members</Text>
+              <View className="flex-row items-center bg-input-background rounded-[20px] border border-border-divider px-5 py-[15px] mt-[15px] shadow-sm focus-within:border-input-focus">
+                <View className="flex-1">
+                  <Text className="text-[9px] font-extrabold text-text-disabled uppercase">
+                    Maximum Members
+                  </Text>
                   <TextInput
                     value={maxParticipants}
                     onChangeText={setMaxParticipants}
                     keyboardType="number-pad"
-                    style={styles.capacityValue}
+                    className="text-xl font-extrabold text-text-primary mt-0.5"
                   />
                 </View>
-                <Ionicons name="person-add" size={20} color="#10b981" />
+                <Ionicons
+                  name="person-add"
+                  size={20}
+                  color="var(--color-success)"
+                />
               </View>
             </View>
 
             {/* Interests */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <View
-                  style={[styles.sectionIcon, { backgroundColor: "#fff1f2" }]}
-                >
-                  <Ionicons name="heart" size={20} color="#f43f5e" />
+            <View className="mt-[30px]">
+              <View className="flex-row items-center mb-[15px]">
+                <View className="p-2 rounded-[12px] mr-3 bg-status-danger/10">
+                  <Ionicons
+                    name="heart"
+                    size={20}
+                    color="var(--color-danger)"
+                  />
                 </View>
-                <Text style={styles.sectionTitle}>Vibe & Interests</Text>
+                <Text className="text-lg font-extrabold text-text-primary">
+                  Vibe & Interests
+                </Text>
               </View>
-              <View style={styles.tagContainer}>
+              <View className="flex-row flex-wrap gap-2">
                 {INTERESTS.map((interest) => {
                   const isSelected = selectedInterests.includes(interest.label);
                   return (
-                    <TouchableOpacity
+                    <AnimatedChip
                       key={interest.label}
+                      label={interest.label}
+                      icon={interest.icon}
+                      isSelected={isSelected}
                       onPress={() => toggleInterest(interest.label)}
-                      style={[styles.tag, isSelected && styles.tagSelected]}
-                    >
-                      <Ionicons
-                        name={interest.icon as any}
-                        size={14}
-                        color={isSelected ? "white" : "#64748b"}
-                      />
-                      <Text
-                        style={[
-                          styles.tagText,
-                          isSelected && { color: "white" },
-                        ]}
-                      >
-                        {interest.label}
-                      </Text>
-                    </TouchableOpacity>
+                    />
                   );
                 })}
               </View>
             </View>
 
             {/* Privacy */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <View
-                  style={[styles.sectionIcon, { backgroundColor: "#eff6ff" }]}
-                >
-                  <Ionicons name="shield-checkmark" size={20} color="#3b82f6" />
+            <View className="mt-[30px]">
+              <View className="flex-row items-center mb-[15px]">
+                <View className="p-2 rounded-[12px] mr-3 bg-status-info/10">
+                  <Ionicons
+                    name="shield-checkmark"
+                    size={20}
+                    color="var(--color-info)"
+                  />
                 </View>
-                <Text style={styles.sectionTitle}>Privacy Setting</Text>
+                <Text className="text-lg font-extrabold text-text-primary">
+                  Privacy Setting
+                </Text>
               </View>
               {VISIBILITY_OPTIONS.map((option) => (
                 <TouchableOpacity
@@ -501,25 +599,34 @@ export default function CreateActivityModal({
                     selectionHaptic();
                     setVisibility(option.value);
                   }}
-                  style={[
-                    styles.privacyBox,
-                    visibility === option.value && styles.privacyBoxSelected,
-                  ]}
+                  className={`flex-row items-center bg-background-surface rounded-[20px] border p-[18px] mb-3 shadow-sm ${
+                    visibility === option.value
+                      ? "bg-brand-primary/10 border-brand-primary border-2"
+                      : "border-border-divider/50"
+                  }`}
                 >
                   <Ionicons
                     name={option.icon as any}
                     size={22}
-                    color={visibility === option.value ? "#3b82f6" : "#64748b"}
+                    color={
+                      visibility === option.value
+                        ? "var(--color-primary)"
+                        : "var(--color-text-secondary)"
+                    }
                   />
-                  <View style={styles.privacyText}>
-                    <Text style={styles.privacyLabel}>{option.label}</Text>
-                    <Text style={styles.privacySub}>{option.subtitle}</Text>
+                  <View className="flex-1 ml-[15px]">
+                    <Text className="text-[15px] font-bold text-text-primary">
+                      {option.label}
+                    </Text>
+                    <Text className="text-[12px] text-text-secondary mt-0.5">
+                      {option.subtitle}
+                    </Text>
                   </View>
                   {visibility === option.value && (
                     <Ionicons
                       name="checkmark-circle"
                       size={20}
-                      color="#3b82f6"
+                      color="var(--color-primary)"
                     />
                   )}
                 </TouchableOpacity>
@@ -527,12 +634,17 @@ export default function CreateActivityModal({
             </View>
 
             {/* Footer */}
-            <TouchableOpacity onPress={handleCreate} disabled={isSubmitting}>
+            <AnimatedPressable
+              onPress={handleCreate}
+              disabled={isSubmitting}
+              scaleValue={0.97}
+              className="mt-8 mb-5"
+            >
               <LinearGradient
                 colors={["#4f46e5", "#7c3aed"]}
-                style={styles.launchBtn}
+                className="h-16 rounded-[20px] justify-center items-center shadow-lg"
               >
-                <Text style={styles.launchBtnText}>
+                <Text className="text-white text-lg font-extrabold uppercase tracking-widest">
                   {isSubmitting
                     ? "Saving..."
                     : initialData
@@ -540,10 +652,15 @@ export default function CreateActivityModal({
                       : "Launch Activity"}
                 </Text>
               </LinearGradient>
-            </TouchableOpacity>
+            </AnimatedPressable>
 
-            <TouchableOpacity onPress={onClose} style={styles.cancelBtn}>
-              <Text style={styles.cancelBtnText}>Cancel and go back</Text>
+            <TouchableOpacity
+              onPress={onClose}
+              className="px-5 py-3 mb-5 items-center"
+            >
+              <Text className="text-text-disabled font-bold">
+                Cancel and go back
+              </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -551,213 +668,3 @@ export default function CreateActivityModal({
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "white" },
-  header: { paddingHorizontal: 20, paddingTop: 50, paddingBottom: 25 },
-  headerTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 15,
-  },
-  closeButton: {
-    backgroundColor: "rgba(255,255,255,0.2)",
-    padding: 10,
-    borderRadius: 25,
-  },
-  headerTitle: { color: "white", fontSize: 22, fontWeight: "800" },
-  createButton: {
-    backgroundColor: "white",
-    paddingHorizontal: 18,
-    paddingVertical: 8,
-    borderRadius: 15,
-  },
-  createButtonText: { color: "#4f46e5", fontWeight: "800" },
-  locationBadge: {
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 20,
-    padding: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
-  },
-  locationIconWrapper: {
-    backgroundColor: "rgba(255,255,255,0.2)",
-    padding: 6,
-    borderRadius: 10,
-    marginRight: 12,
-  },
-  locationTextWrapper: { flex: 1 },
-  locationLabel: {
-    color: "white",
-    opacity: 0.6,
-    fontSize: 10,
-    fontWeight: "800",
-    textTransform: "uppercase",
-  },
-  locationValue: { color: "white", fontSize: 13, fontWeight: "700" },
-  scroll: { flex: 1 },
-  scrollContent: { paddingBottom: 50 },
-  padding: { paddingHorizontal: 20 },
-  section: { marginTop: 30 },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 15,
-  },
-  sectionIcon: { padding: 8, borderRadius: 12, marginRight: 12 },
-  sectionTitle: { fontSize: 18, fontWeight: "800", color: "#0f172a" },
-  inputCard: {
-    backgroundColor: "#f8fafc",
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    overflow: "hidden",
-  },
-  titleInput: {
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#0f172a",
-  },
-  divider: { height: 1, backgroundColor: "#e2e8f0", marginHorizontal: 20 },
-  descInput: {
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-    fontSize: 15,
-    color: "#475569",
-    minHeight: 120,
-    textAlignVertical: "top",
-  },
-  row: { flexDirection: "row", gap: 12, marginTop: 20 },
-  flex1: { flex: 1 },
-  label: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: "#64748b",
-    marginBottom: 8,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  simpleInput: {
-    backgroundColor: "white",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    minHeight: 56,
-    justifyContent: "center",
-  },
-  textInputBold: { fontSize: 15, fontWeight: "700", color: "#0f172a" },
-  rowBetween: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  rowCenter: { flexDirection: "row", alignItems: "center" },
-  dateCard: {
-    backgroundColor: "#f5f7ff",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#e0e7ff",
-    padding: 16,
-    marginTop: 20,
-  },
-  dateIconWrapper: {
-    backgroundColor: "white",
-    padding: 8,
-    borderRadius: 10,
-    marginRight: 15,
-  },
-  dateLabel: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: "#6366f1",
-    textTransform: "uppercase",
-  },
-  dateValue: { fontSize: 15, fontWeight: "800", color: "#0f172a" },
-  sizeOption: {
-    flex: 1,
-    backgroundColor: "white",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    padding: 15,
-    alignItems: "center",
-  },
-  sizeOptionSelected: { backgroundColor: "#f0fdf4", borderColor: "#10b981" },
-  sizeLabelSmall: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#64748b",
-    marginTop: 8,
-  },
-  capacityInput: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f8fafc",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    marginTop: 15,
-  },
-  labelSmall: {
-    fontSize: 9,
-    fontWeight: "800",
-    color: "#94a3b8",
-    textTransform: "uppercase",
-  },
-  capacityValue: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#0f172a",
-    marginTop: 2,
-  },
-  tagContainer: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  tag: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "white",
-    borderRadius: 25,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-  },
-  tagSelected: { backgroundColor: "#0f172a", borderColor: "#0f172a" },
-  tagText: { fontSize: 13, fontWeight: "700", color: "#475569", marginLeft: 8 },
-  privacyBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "white",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#f1f5f9",
-    padding: 18,
-    marginBottom: 12,
-  },
-  privacyBoxSelected: {
-    backgroundColor: "#f0f7ff",
-    borderColor: "#3b82f6",
-    borderWidth: 2,
-  },
-  privacyText: { flex: 1, marginLeft: 15 },
-  privacyLabel: { fontSize: 15, fontWeight: "700", color: "#0f172a" },
-  privacySub: { fontSize: 12, color: "#64748b", marginTop: 2 },
-  launchBtn: {
-    height: 64,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 20,
-  },
-  launchBtnText: { color: "white", fontSize: 18, fontWeight: "900" },
-  cancelBtn: { alignItems: "center", padding: 20 },
-  cancelBtnText: { color: "#94a3b8", fontWeight: "700", fontSize: 14 },
-});

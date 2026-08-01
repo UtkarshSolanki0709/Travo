@@ -3,10 +3,11 @@ import { database, type Activity } from "@/services/database";
 import { useUser } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
 import { format } from "date-fns";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   Image,
   Modal,
   ScrollView,
@@ -75,12 +76,32 @@ export default function ActivityDetailsModal({
     }
   }, [activity, clerkUser]);
 
+  // Entrance animation for modal content
+  const contentTranslateY = useRef(new Animated.Value(50)).current;
+  const contentOpacity = useRef(new Animated.Value(0)).current;
+
   useEffect(() => {
     if (visible && activity) {
       setDisplayActivity(activity);
       fetchData();
+      // Reset and trigger entrance animation
+      contentTranslateY.setValue(50);
+      contentOpacity.setValue(0);
+      Animated.parallel([
+        Animated.spring(contentTranslateY, {
+          toValue: 0,
+          useNativeDriver: true,
+          speed: 14,
+          bounciness: 5,
+        }),
+        Animated.timing(contentOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
     }
-  }, [visible, activity, fetchData]);
+  }, [visible, activity, fetchData, contentTranslateY, contentOpacity]);
 
   const handleJoinRequest = async () => {
     if (!activity || !clerkUser) return;
@@ -213,335 +234,363 @@ export default function ActivityDetailsModal({
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View className="flex-1 bg-black/50 justify-end">
-        <View className="bg-white rounded-t-3xl h-[90%] overflow-hidden">
-          {/* Header */}
-          <View className="flex-row items-center justify-between px-6 py-4 border-b border-slate-100">
-            <Text className="text-xl font-bold text-slate-900">
-              Activity Details
-            </Text>
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color="#64748b" />
-            </TouchableOpacity>
-          </View>
+        <Animated.View
+          style={[
+            { flex: 1, justifyContent: "flex-end" },
+            {
+              transform: [{ translateY: contentTranslateY }],
+              opacity: contentOpacity,
+            },
+          ]}
+        >
+          <View className="bg-background-surface rounded-t-3xl h-[90%] overflow-hidden border-t border-border-divider">
+            {/* Header */}
+            <View
+              className="flex-row items-center justify-between px-6 py-4 border-b border-border-divider"
+              style={{ backgroundColor: "var(--color-surface)" }}
+            >
+              <Text className="text-xl font-bold text-text-primary">
+                Activity Details
+              </Text>
+              <TouchableOpacity onPress={onClose}>
+                <Ionicons
+                  name="close"
+                  size={24}
+                  color="var(--color-text-secondary)"
+                />
+              </TouchableOpacity>
+            </View>
 
-          <ScrollView className="flex-1 px-6 py-4">
-            {loading ? (
-              <View className="flex-1 items-center justify-center py-20">
-                <ActivityIndicator size="large" color="#6366f1" />
-              </View>
-            ) : (
-              <>
-                {/* Main Info */}
-                <View className="mb-6">
-                  <Text className="text-2xl font-bold text-slate-900 mb-2">
-                    {displayActivity.title}
-                  </Text>
-                  <View className="flex-row items-center mb-2">
-                    <Ionicons
-                      name="calendar-outline"
-                      size={18}
-                      color="#6366f1"
-                    />
-                    <Text className="text-slate-600 ml-2">
-                      {format(
-                        new Date(displayActivity.start_time),
-                        "EEEE, MMMM do, h:mm a",
-                      )}
+            <ScrollView className="flex-1 px-6 py-4">
+              {loading ? (
+                <View className="flex-1 items-center justify-center py-20">
+                  <ActivityIndicator
+                    size="large"
+                    color="var(--color-primary)"
+                  />
+                </View>
+              ) : (
+                <>
+                  {/* Main Info */}
+                  <View className="mb-6">
+                    <Text className="text-2xl font-bold text-text-primary mb-2">
+                      {displayActivity.title}
                     </Text>
-                  </View>
-                  {displayActivity.city && (
                     <View className="flex-row items-center mb-2">
                       <Ionicons
-                        name="location-outline"
+                        name="calendar-outline"
                         size={18}
-                        color="#6366f1"
+                        color="var(--color-primary)"
                       />
-                      <Text className="text-slate-600 ml-2">
-                        {displayActivity.city}
+                      <Text className="text-text-secondary ml-2">
+                        {format(
+                          new Date(displayActivity.start_time),
+                          "EEEE, MMMM do, h:mm a",
+                        )}
                       </Text>
                     </View>
-                  )}
-                </View>
-
-                {/* Description */}
-                {displayActivity.description && (
-                  <View className="mb-6">
-                    <Text className="text-sm font-bold text-slate-900 uppercase mb-2">
-                      About
-                    </Text>
-                    <Text className="text-slate-600 leading-5">
-                      {displayActivity.description}
-                    </Text>
-                  </View>
-                )}
-
-                {/* Status & Participants Summary */}
-                <View className="flex-row mb-6 bg-slate-50 p-4 rounded-2xl">
-                  <View className="flex-1">
-                    <Text className="text-xs text-slate-400 font-bold uppercase">
-                      Participants
-                    </Text>
-                    <Text className="text-lg font-bold text-slate-900">
-                      {participants.length} / {displayActivity.max_participants}
-                    </Text>
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-xs text-slate-400 font-bold uppercase">
-                      Visibility
-                    </Text>
-                    <Text className="text-lg font-bold text-slate-900 capitalize">
-                      {displayActivity.visibility}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Join/Leave Actions (for non-admins) */}
-                {!isAdmin && (
-                  <View className="mb-6">
-                    {userStatus === "approved" ? (
-                      <TouchableOpacity
-                        onPress={handleLeave}
-                        disabled={actionLoading}
-                        className="bg-red-50 py-4 rounded-2xl items-center border border-red-100"
-                      >
-                        <Text className="text-red-600 font-bold text-base">
-                          Leave Activity
-                        </Text>
-                      </TouchableOpacity>
-                    ) : userStatus === "pending" ? (
-                      <View className="bg-yellow-50 py-4 rounded-2xl items-center border border-yellow-100">
-                        <Text className="text-yellow-700 font-bold text-base">
-                          Request Pending
+                    {displayActivity.city && (
+                      <View className="flex-row items-center mb-2">
+                        <Ionicons
+                          name="location-outline"
+                          size={18}
+                          color="var(--color-primary)"
+                        />
+                        <Text className="text-text-secondary ml-2">
+                          {displayActivity.city}
                         </Text>
                       </View>
-                    ) : (
-                      <TouchableOpacity
-                        onPress={handleJoinRequest}
-                        disabled={
-                          actionLoading ||
-                          participants.length >=
-                            displayActivity.max_participants
-                        }
-                        className={`py-4 rounded-2xl items-center ${
-                          participants.length >=
-                          displayActivity.max_participants
-                            ? "bg-slate-200"
-                            : "bg-indigo-600"
-                        }`}
-                      >
-                        <Text
-                          className={`font-bold text-base ${participants.length >= displayActivity.max_participants ? "text-slate-600" : "text-white"}`}
-                        >
-                          {participants.length >=
-                          displayActivity.max_participants
-                            ? "Activity Full"
-                            : "Request to Join"}
-                        </Text>
-                      </TouchableOpacity>
                     )}
                   </View>
-                )}
 
-                {/* Admin Panel */}
-                {isAdmin && (
-                  <View className="mb-6">
-                    <View className="flex-row items-center justify-between mb-4">
-                      <Text className="text-base font-bold text-slate-900">
-                        Admin Dashboard
+                  {/* Description */}
+                  {displayActivity.description && (
+                    <View className="mb-6">
+                      <Text className="text-sm font-bold text-text-primary uppercase mb-2">
+                        About
                       </Text>
-                      <View className="flex-row gap-2">
-                        <TouchableOpacity
-                          onPress={() => setEditModalVisible(true)}
-                          className="flex-row items-center bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100"
-                        >
-                          <Ionicons
-                            name="create-outline"
-                            size={16}
-                            color="#4f46e5"
-                          />
-                          <Text className="text-indigo-600 font-bold text-xs ml-1.5">
-                            Edit
-                          </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          onPress={handleDelete}
-                          className="flex-row items-center bg-red-50 px-3 py-1.5 rounded-lg border border-red-100"
-                        >
-                          <Ionicons
-                            name="trash-outline"
-                            size={16}
-                            color="#ef4444"
-                          />
-                          <Text className="text-red-600 font-bold text-xs ml-1.5">
-                            Delete
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
+                      <Text className="text-text-secondary leading-5">
+                        {displayActivity.description}
+                      </Text>
                     </View>
+                  )}
 
-                    {/* Join Requests */}
-                    <View className="mb-4">
-                      <Text className="text-xs text-slate-400 font-bold uppercase mb-2">
-                        Pending Requests ({requests.length})
+                  {/* Status & Participants Summary */}
+                  <View className="flex-row mb-6 bg-background-elevated p-4 rounded-2xl border border-border-divider">
+                    <View className="flex-1">
+                      <Text className="text-xs text-text-disabled font-bold uppercase">
+                        Participants
                       </Text>
-                      {requests.length === 0 ? (
-                        <Text className="text-slate-400 text-sm italic">
-                          No pending requests
-                        </Text>
-                      ) : (
-                        requests.map((req) => (
-                          <View
-                            key={req.user_id}
-                            className="flex-row items-center justify-between py-3 border-b border-slate-50"
-                          >
-                            <View className="flex-row items-center">
-                              <Image
-                                source={{
-                                  uri:
-                                    req.user?.avatar_url ||
-                                    "https://via.placeholder.com/150",
-                                }}
-                                className="w-10 h-10 rounded-full bg-slate-100"
-                              />
-                              <View className="ml-3">
-                                <Text className="text-sm font-bold text-slate-900">
-                                  {req.user?.display_name || "User"}
-                                </Text>
-                                <Text className="text-xs text-slate-500">
-                                  @{req.user?.username}
-                                </Text>
-                              </View>
-                            </View>
-                            <View className="flex-row gap-2">
-                              <TouchableOpacity
-                                onPress={() => handleReject(req.user_id)}
-                                className="p-2 bg-red-50 rounded-full"
-                              >
-                                <Ionicons
-                                  name="close"
-                                  size={18}
-                                  color="#ef4444"
-                                />
-                              </TouchableOpacity>
-                              <TouchableOpacity
-                                onPress={() => handleApprove(req.user_id)}
-                                className="p-2 bg-green-50 rounded-full"
-                              >
-                                <Ionicons
-                                  name="checkmark"
-                                  size={18}
-                                  color="#10b981"
-                                />
-                              </TouchableOpacity>
-                            </View>
-                          </View>
-                        ))
-                      )}
+                      <Text className="text-lg font-bold text-text-primary">
+                        {participants.length} /{" "}
+                        {displayActivity.max_participants}
+                      </Text>
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-xs text-text-disabled font-bold uppercase">
+                        Visibility
+                      </Text>
+                      <Text className="text-lg font-bold text-text-primary capitalize">
+                        {displayActivity.visibility}
+                      </Text>
                     </View>
                   </View>
-                )}
 
-                {/* Participants List */}
-                <View className="mb-10">
-                  <Text className="text-sm font-bold text-slate-900 uppercase mb-4">
-                    Confirmed Participants
-                  </Text>
-                  {participants.length === 0 ? (
-                    <Text className="text-slate-400 text-sm italic">
-                      No participants yet
-                    </Text>
-                  ) : (
-                    participants.map((p) => (
-                      <View
-                        key={p.user_id}
-                        className="flex-row items-center mb-4"
-                      >
-                        <Image
-                          source={{
-                            uri:
-                              p.user?.avatar_url ||
-                              "https://via.placeholder.com/150",
-                          }}
-                          className="w-12 h-12 rounded-full bg-slate-100"
-                        />
-                        <View className="ml-4">
-                          <Text className="text-sm font-bold text-slate-900">
-                            {p.user?.display_name || "User"}{" "}
-                            {p.user_id === displayActivity.creator_id && (
-                              <Text className="text-indigo-600 font-normal">
-                                (Admin)
-                              </Text>
-                            )}
+                  {/* Join/Leave Actions (for non-admins) */}
+                  {!isAdmin && (
+                    <View className="mb-6">
+                      {userStatus === "approved" ? (
+                        <TouchableOpacity
+                          onPress={handleLeave}
+                          disabled={actionLoading}
+                          className="bg-status-danger/10 py-4 rounded-2xl items-center border border-status-danger/20"
+                        >
+                          <Text className="text-status-danger font-bold text-base">
+                            Leave Activity
                           </Text>
-                          <Text className="text-xs text-slate-500">
-                            @{p.user?.username}
+                        </TouchableOpacity>
+                      ) : userStatus === "pending" ? (
+                        <View className="bg-status-warning/10 py-4 rounded-2xl items-center border border-status-warning/20">
+                          <Text className="text-status-warning font-bold text-base">
+                            Request Pending
                           </Text>
                         </View>
-                      </View>
-                    ))
+                      ) : (
+                        <TouchableOpacity
+                          onPress={handleJoinRequest}
+                          disabled={
+                            actionLoading ||
+                            participants.length >=
+                              displayActivity.max_participants
+                          }
+                          className={`py-4 rounded-2xl items-center shadow-sm ${
+                            participants.length >=
+                            displayActivity.max_participants
+                              ? "bg-background-elevated"
+                              : "bg-brand-primary active:bg-brand-primary-pressed"
+                          }`}
+                        >
+                          <Text
+                            className={`font-bold text-base ${participants.length >= displayActivity.max_participants ? "text-text-disabled" : "text-text-on-primary"}`}
+                          >
+                            {participants.length >=
+                            displayActivity.max_participants
+                              ? "Activity Full"
+                              : "Request to Join"}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
                   )}
-                </View>
-              </>
-            )}
-          </ScrollView>
 
-          {/* Rejection Reason Modal */}
-          <Modal
-            visible={rejectModalVisible}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setRejectModalVisible(false)}
-          >
-            <View className="flex-1 bg-black/50 justify-center px-6">
-              <View className="bg-white rounded-3xl p-6 shadow-xl">
-                <Text className="text-lg font-bold text-slate-900 mb-2">
-                  Decline Request
-                </Text>
-                <Text className="text-slate-500 text-sm mb-4">
-                  Please state the reason for declining this participant.
-                </Text>
+                  {/* Admin Panel */}
+                  {isAdmin && (
+                    <View className="mb-6">
+                      <View className="flex-row items-center justify-between mb-4">
+                        <Text className="text-base font-bold text-text-primary">
+                          Admin Dashboard
+                        </Text>
+                        <View className="flex-row gap-2">
+                          <TouchableOpacity
+                            onPress={() => setEditModalVisible(true)}
+                            className="flex-row items-center bg-brand-primary/10 px-3 py-1.5 rounded-lg border border-brand-primary/20"
+                          >
+                            <Ionicons
+                              name="create-outline"
+                              size={16}
+                              color="var(--color-primary)"
+                            />
+                            <Text className="text-brand-primary font-bold text-xs ml-1.5">
+                              Edit
+                            </Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={handleDelete}
+                            className="flex-row items-center bg-status-danger/10 px-3 py-1.5 rounded-lg border border-status-danger/20"
+                          >
+                            <Ionicons
+                              name="trash-outline"
+                              size={16}
+                              color="var(--color-danger)"
+                            />
+                            <Text className="text-status-danger font-bold text-xs ml-1.5">
+                              Delete
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
 
-                <TextInput
-                  className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 h-32 text-start vertical-align-top"
-                  placeholder="Reason..."
-                  multiline
-                  value={rejectReason}
-                  onChangeText={setRejectReason}
-                  textAlignVertical="top"
-                />
+                      {/* Join Requests */}
+                      <View className="mb-4">
+                        <Text className="text-xs text-text-disabled font-bold uppercase mb-2">
+                          Pending Requests ({requests.length})
+                        </Text>
+                        {requests.length === 0 ? (
+                          <Text className="text-text-disabled text-sm italic">
+                            No pending requests
+                          </Text>
+                        ) : (
+                          requests.map((req) => (
+                            <View
+                              key={req.user_id}
+                              className="flex-row items-center justify-between py-3 border-b border-border-divider"
+                            >
+                              <View className="flex-row items-center">
+                                <Image
+                                  source={{
+                                    uri:
+                                      req.user?.avatar_url ||
+                                      "https://via.placeholder.com/150",
+                                  }}
+                                  className="w-10 h-10 rounded-full bg-background-elevated"
+                                />
+                                <View className="ml-3">
+                                  <Text className="text-sm font-bold text-text-primary">
+                                    {req.user?.display_name || "User"}
+                                  </Text>
+                                  <Text className="text-xs text-text-secondary">
+                                    @{req.user?.username}
+                                  </Text>
+                                </View>
+                              </View>
+                              <View className="flex-row gap-2">
+                                <TouchableOpacity
+                                  onPress={() => handleReject(req.user_id)}
+                                  className="p-2 bg-status-danger/10 rounded-full"
+                                >
+                                  <Ionicons
+                                    name="close"
+                                    size={18}
+                                    color="var(--color-danger)"
+                                  />
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                  onPress={() => handleApprove(req.user_id)}
+                                  className="p-2 bg-status-success/10 rounded-full"
+                                >
+                                  <Ionicons
+                                    name="checkmark"
+                                    size={18}
+                                    color="var(--color-success)"
+                                  />
+                                </TouchableOpacity>
+                              </View>
+                            </View>
+                          ))
+                        )}
+                      </View>
+                    </View>
+                  )}
 
-                <View className="flex-row gap-3 mt-6">
-                  <TouchableOpacity
-                    onPress={() => setRejectModalVisible(false)}
-                    className="flex-1 py-3 items-center bg-slate-100 rounded-xl"
-                  >
-                    <Text className="text-slate-600 font-bold">Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={confirmReject}
-                    disabled={actionLoading || !rejectReason.trim()}
-                    className={`flex-1 py-3 items-center rounded-xl ${
-                      !rejectReason.trim() ? "bg-red-200" : "bg-red-600"
-                    }`}
-                  >
-                    <Text className="text-white font-bold">Decline</Text>
-                  </TouchableOpacity>
+                  {/* Participants List */}
+                  <View className="mb-10">
+                    <Text className="text-sm font-bold text-text-primary uppercase mb-4">
+                      Confirmed Participants
+                    </Text>
+                    {participants.length === 0 ? (
+                      <Text className="text-text-disabled text-sm italic">
+                        No participants yet
+                      </Text>
+                    ) : (
+                      participants.map((p) => (
+                        <View
+                          key={p.user_id}
+                          className="flex-row items-center mb-4"
+                        >
+                          <Image
+                            source={{
+                              uri:
+                                p.user?.avatar_url ||
+                                "https://via.placeholder.com/150",
+                            }}
+                            className="w-12 h-12 rounded-full bg-background-elevated"
+                          />
+                          <View className="ml-4">
+                            <Text className="text-sm font-bold text-text-primary">
+                              {p.user?.display_name || "User"}{" "}
+                              {p.user_id === displayActivity.creator_id && (
+                                <Text className="text-brand-primary font-normal">
+                                  (Admin)
+                                </Text>
+                              )}
+                            </Text>
+                            <Text className="text-xs text-text-secondary">
+                              @{p.user?.username}
+                            </Text>
+                          </View>
+                        </View>
+                      ))
+                    )}
+                  </View>
+                </>
+              )}
+            </ScrollView>
+
+            {/* Rejection Reason Modal */}
+            <Modal
+              visible={rejectModalVisible}
+              transparent
+              animationType="fade"
+              onRequestClose={() => setRejectModalVisible(false)}
+            >
+              <View className="flex-1 bg-black/50 justify-center px-6">
+                <View className="bg-background-surface rounded-3xl p-6 shadow-xl border border-border-divider">
+                  <Text className="text-lg font-bold text-text-primary mb-2">
+                    Decline Request
+                  </Text>
+                  <Text className="text-text-secondary text-sm mb-4">
+                    Please state the reason for declining this participant.
+                  </Text>
+
+                  <TextInput
+                    className="bg-input-background border border-border-divider rounded-xl p-4 text-text-primary h-32 focus:border-input-focus"
+                    placeholder="Reason..."
+                    placeholderTextColor="var(--color-text-disabled)"
+                    multiline
+                    value={rejectReason}
+                    onChangeText={setRejectReason}
+                    textAlignVertical="top"
+                  />
+
+                  <View className="flex-row gap-3 mt-6">
+                    <TouchableOpacity
+                      onPress={() => setRejectModalVisible(false)}
+                      className="flex-1 py-3 items-center bg-background-elevated rounded-xl border border-border-divider"
+                    >
+                      <Text className="text-text-secondary font-bold">
+                        Cancel
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={confirmReject}
+                      disabled={actionLoading || !rejectReason.trim()}
+                      className={`flex-1 py-3 items-center rounded-xl ${
+                        rejectReason.trim()
+                          ? "bg-status-danger"
+                          : "bg-status-danger/30"
+                      }`}
+                    >
+                      <Text className="text-text-on-primary font-bold">
+                        Decline
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
-            </View>
-          </Modal>
+            </Modal>
 
-          {/* Edit Activity Modal */}
-          <CreateActivityModal
-            visible={editModalVisible}
-            onClose={() => setEditModalVisible(false)}
-            initialData={displayActivity || undefined}
-            onActivityUpdated={async () => {
-              setEditModalVisible(false);
-              await fetchData();
-            }}
-          />
-        </View>
+            {/* Edit Activity Modal */}
+            <CreateActivityModal
+              visible={editModalVisible}
+              onClose={() => setEditModalVisible(false)}
+              initialData={displayActivity || undefined}
+              onActivityUpdated={async () => {
+                setEditModalVisible(false);
+                await fetchData();
+              }}
+            />
+          </View>
+        </Animated.View>
       </View>
     </Modal>
   );

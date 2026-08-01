@@ -32,7 +32,7 @@ export default function PostsGrid({
   if (loading) {
     return (
       <View className="p-10">
-        <ActivityIndicator size="large" color="#6366f1" />
+        <ActivityIndicator size="large" color="var(--color-primary)" />
       </View>
     );
   }
@@ -40,8 +40,12 @@ export default function PostsGrid({
   if (posts.length === 0) {
     return (
       <View className="w-full p-10 items-center justify-center">
-        <Ionicons name={emptyIcon} size={48} color="#e2e8f0" />
-        <Text className="mt-3 text-slate-400 text-sm">{emptyMessage}</Text>
+        <Ionicons
+          name={emptyIcon}
+          size={48}
+          color="var(--color-text-disabled)"
+        />
+        <Text className="mt-3 text-text-disabled text-sm">{emptyMessage}</Text>
       </View>
     );
   }
@@ -51,8 +55,11 @@ export default function PostsGrid({
       {posts.map((post) => (
         <TouchableOpacity
           key={post.id}
-          style={{ width: Math.round(COLUMN_WIDTH), height: Math.round(COLUMN_WIDTH) }}
-          className="rounded-xl overflow-hidden bg-white border border-slate-100"
+          style={{
+            width: Math.round(COLUMN_WIDTH),
+            height: Math.round(COLUMN_WIDTH),
+          }}
+          className="rounded-xl overflow-hidden bg-background-surface border border-border-divider"
           onPress={() => onPostPress(post)}
         >
           {post.media_url ? (
@@ -72,10 +79,10 @@ export default function PostsGrid({
               className="w-full h-full"
             />
           ) : (
-            <View className="flex-1 p-2 bg-slate-50 justify-center">
+            <View className="flex-1 p-2 bg-background-elevated justify-center">
               <Text
                 numberOfLines={3}
-                className="text-[10px] text-slate-500 text-center"
+                className="text-[10px] text-text-secondary text-center"
               >
                 {post.text}
               </Text>
