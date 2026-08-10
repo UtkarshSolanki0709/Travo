@@ -1,14 +1,30 @@
 import { ClerkProvider, useAuth, useUser } from "@clerk/clerk-expo";
 import { tokenCache } from "@clerk/clerk-expo/token-cache";
+import { ThemeProvider } from "@react-navigation/native";
+import {
+  Poppins_700Bold,
+  Poppins_800ExtraBold,
+} from "@expo-google-fonts/poppins";
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+} from "@expo-google-fonts/inter";
+import { useFonts } from "expo-font";
 import { Slot, useRouter, useSegments } from "expo-router";
-import { useEffect } from "react";
+import * as SplashScreen from "expo-splash-screen";
+import { useCallback, useEffect } from "react";
 import "react-native-url-polyfill/auto";
 import "../global.css";
 import { ActivityIndicator, View } from "react-native";
 import { MapProvider } from "../context/MapContext";
 import { database } from "../services/database";
 import { PortalHost } from "@rn-primitives/portal";
+import { NAV_THEME, COLORS } from "../lib/theme";
 // import "../services/locationTask"; // Register background task
+
+// Prevent splash screen from auto-hiding until fonts are loaded
+SplashScreen.preventAutoHideAsync();
 
 const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
@@ -53,8 +69,8 @@ function InitialLayout() {
 
   if (!isLoaded) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#6366f1" />
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: COLORS.background }}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
   }
@@ -63,15 +79,37 @@ function InitialLayout() {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded, fontError] = useFonts({
+    Poppins_700Bold,
+    Poppins_800ExtraBold,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+  });
+
+  const onLayoutRootView = useCallback(async () => {
+    if (fontsLoaded || fontError) {
+      await SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, fontError]);
+
+  if (!fontsLoaded && !fontError) {
+    return null; // Splash screen stays visible
+  }
+
   return (
-    <ClerkProvider
-      publishableKey={CLERK_PUBLISHABLE_KEY || ""}
-      tokenCache={tokenCache}
-    >
-      <MapProvider>
-        <InitialLayout />
-        <PortalHost />
-      </MapProvider>
-    </ClerkProvider>
+    <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+      <ThemeProvider value={NAV_THEME}>
+        <ClerkProvider
+          publishableKey={CLERK_PUBLISHABLE_KEY || ""}
+          tokenCache={tokenCache}
+        >
+          <MapProvider>
+            <InitialLayout />
+            <PortalHost />
+          </MapProvider>
+        </ClerkProvider>
+      </ThemeProvider>
+    </View>
   );
 }

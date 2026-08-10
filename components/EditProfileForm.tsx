@@ -1,12 +1,14 @@
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native'
-import { User } from '@/services/database'
+import { View, Text } from 'react-native';
+import { User } from '@/services/database';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 interface EditProfileFormProps {
-  editingData: Partial<User>
-  saving: boolean
-  onDataChange: (data: Partial<User>) => void
-  onSave: () => void
-  onCancel: () => void
+  editingData: Partial<User>;
+  saving: boolean;
+  onDataChange: (data: Partial<User>) => void;
+  onSave: () => void;
+  onCancel: () => void;
 }
 
 export default function EditProfileForm({
@@ -14,58 +16,71 @@ export default function EditProfileForm({
   saving,
   onDataChange,
   onSave,
-  onCancel
+  onCancel,
 }: EditProfileFormProps) {
   return (
-    <View className="w-full px-2.5">
-      <TextInput
-        className="bg-white border border-slate-200 rounded-xl p-3 mb-3 text-base text-slate-800"
-        placeholder="Display Name"
-        value={editingData.display_name || ''}
-        onChangeText={(text) => onDataChange({ ...editingData, display_name: text })}
-      />
-      <TextInput
-        className="bg-white border border-slate-200 rounded-xl p-3 mb-3 text-base text-slate-800 h-20"
-        placeholder="Bio"
-        multiline
-        numberOfLines={3}
-        textAlignVertical="top"
-        value={editingData.bio || ''}
-        onChangeText={(text) => onDataChange({ ...editingData, bio: text })}
-      />
-      <View className="flex-row mb-3">
-        <TextInput
-          className="flex-1 bg-white border border-slate-200 rounded-xl p-3 text-base text-slate-800 mr-2"
-          placeholder="City"
-          value={editingData.city || ''}
-          onChangeText={(text) => onDataChange({ ...editingData, city: text })}
-        />
-        <TextInput
-          className="flex-1 bg-white border border-slate-200 rounded-xl p-3 text-base text-slate-800"
-          placeholder="Country"
-          value={editingData.country || ''}
-          onChangeText={(text) => onDataChange({ ...editingData, country: text })}
+    <View className="w-full px-2.5 mb-6">
+      <View className="mb-3">
+        <Input
+          label="Display Name"
+          placeholder="Display Name"
+          value={editingData.display_name || ''}
+          onChangeText={(text) => onDataChange({ ...editingData, display_name: text })}
         />
       </View>
-      <View className="flex-row gap-3 mt-2">
-        <TouchableOpacity 
-          className="flex-1 p-3.5 rounded-xl items-center bg-slate-100" 
+
+      <View className="mb-3">
+        <Input
+          label="Bio"
+          placeholder="Tell travelers about yourself..."
+          multiline
+          numberOfLines={3}
+          textAlignVertical="top"
+          value={editingData.bio || ''}
+          onChangeText={(text) => onDataChange({ ...editingData, bio: text })}
+          className="min-h-[80px]"
+        />
+      </View>
+
+      <View className="flex-row gap-3 mb-4">
+        <View className="flex-1">
+          <Input
+            label="City"
+            placeholder="City"
+            value={editingData.city || ''}
+            onChangeText={(text) => onDataChange({ ...editingData, city: text })}
+          />
+        </View>
+        <View className="flex-1">
+          <Input
+            label="Country"
+            placeholder="Country"
+            value={editingData.country || ''}
+            onChangeText={(text) => onDataChange({ ...editingData, country: text })}
+          />
+        </View>
+      </View>
+
+      <View className="flex-row gap-3">
+        <Button
+          variant="secondary"
+          size="default"
+          className="flex-1"
           onPress={onCancel}
         >
-          <Text className="text-slate-600 font-semibold">Cancel</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          className="flex-1 p-3.5 rounded-xl items-center bg-indigo-500" 
+          <Text className="text-primary font-semibold text-body-md font-body">Cancel</Text>
+        </Button>
+
+        <Button
+          variant="default"
+          size="default"
+          className="flex-1"
+          loading={saving}
           onPress={onSave}
-          disabled={saving}
         >
-          {saving ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text className="text-white font-semibold">Save</Text>
-          )}
-        </TouchableOpacity>
+          <Text className="text-white font-semibold text-body-md font-body">Save</Text>
+        </Button>
       </View>
     </View>
-  )
+  );
 }

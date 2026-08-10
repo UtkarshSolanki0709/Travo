@@ -8,7 +8,8 @@ import * as Location from "expo-location";
 import { useVideoPlayer } from "expo-video";
 import debounce from "lodash.debounce";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, View } from "react-native";
+import { ActivityIndicator, Alert, ImageBackground, ScrollView, View } from "react-native";
+import { Image as ImageIcon, UserPlus } from "lucide-react-native";
 
 import CreatePostModal from "@/components/CreatePostModal";
 import EditPostModal from "@/components/EditPostModal";
@@ -673,21 +674,23 @@ export default function ProfileScreen() {
   }
 
   return (
-    <ScrollView
-      className="flex-1 bg-slate-50"
-      contentContainerStyle={{ padding: 24, paddingTop: 60 }}
+    <ImageBackground
+      source={require("@/assets/textures/paper-texture.png")}
+      imageStyle={{ opacity: 0.05 }}
+      className="flex-1 bg-background"
     >
-      <SignedIn>
-        <ProfileHeader
-          userData={userData}
-          friendsCount={friendsCount}
-          activitiesCount={activitiesCount}
-          isEditing={isEditing}
-          onEditPress={() => setIsEditing(true)}
-          onCreatePostPress={() => setIsCreatingPost(true)}
-          onAvatarPress={pickImage}
-          editingData={editingData}
-        />
+      <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 48 }}>
+        <SignedIn>
+          <ProfileHeader
+            userData={userData}
+            friendsCount={friendsCount}
+            activitiesCount={activitiesCount}
+            isEditing={isEditing}
+            onEditPress={() => setIsEditing(true)}
+            onCreatePostPress={() => setIsCreatingPost(true)}
+            onAvatarPress={pickImage}
+            editingData={editingData}
+          />
 
         {isEditing && (
           <EditProfileForm
@@ -711,7 +714,7 @@ export default function ProfileScreen() {
             activeTab === "posts" ? "No posts yet" : "No tagged posts"
           }
           emptyIcon={
-            activeTab === "posts" ? "images-outline" : "person-add-outline"
+            activeTab === "posts" ? ImageIcon : UserPlus
           }
           onPostPress={openPostDetail}
         />
@@ -815,6 +818,7 @@ export default function ProfileScreen() {
       <SignedOut>
         <LoggedOutView />
       </SignedOut>
-    </ScrollView>
+      </ScrollView>
+    </ImageBackground>
   );
 }

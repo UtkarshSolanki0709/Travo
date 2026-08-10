@@ -1,7 +1,17 @@
 import { chatService, type Conversation } from "@/services/chatService";
 import { database, type User } from "@/services/database";
+import { COLORS } from "@/lib/theme";
 import { useUser } from "@clerk/clerk-expo";
-import { Ionicons } from "@expo/vector-icons";
+import {
+  UserPlus,
+  Users,
+  User as UserIcon,
+  MessageCircle,
+  X,
+  Check,
+  Search,
+  MessageSquare,
+} from "lucide-react-native";
 import { format } from "date-fns";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
@@ -9,14 +19,17 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  Image,
   Modal,
   RefreshControl,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
+  ImageBackground,
 } from "react-native";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 type TabType = "chats" | "friends";
 
@@ -164,43 +177,42 @@ export default function ChatsScreen() {
     return (
       <TouchableOpacity
         onPress={() => handleOpenConversation(item.id)}
-        className="flex-row items-center p-4 bg-white mb-2 rounded-2xl border border-slate-100 shadow-sm"
+        className="flex-row items-center p-4 bg-surface mb-2.5 rounded-radius-lg border border-border shadow-elevation-1"
       >
-        {avatar ? (
-          <Image
-            source={{ uri: avatar }}
-            className="w-12 h-12 rounded-full bg-slate-100"
-          />
-        ) : (
-          <View className="w-12 h-12 rounded-full bg-indigo-100 items-center justify-center">
-            <Ionicons
-              name={isGroup ? "people" : "person"}
-              size={22}
-              color="#6366f1"
-            />
-          </View>
-        )}
+        <Avatar isSelf={false}>
+          {avatar ? (
+            <AvatarImage source={{ uri: avatar }} />
+          ) : (
+            <AvatarFallback>
+              {isGroup ? (
+                <Users size={20} color={COLORS.primary} />
+              ) : (
+                <UserIcon size={20} color={COLORS.primary} />
+              )}
+            </AvatarFallback>
+          )}
+        </Avatar>
 
         <View className="flex-1 ml-3">
           <View className="flex-row items-center justify-between">
-            <Text className="text-base font-bold text-slate-900" numberOfLines={1}>
+            <Text className="text-heading-md font-heading text-foreground flex-1 mr-2" numberOfLines={1}>
               {title}
             </Text>
             {item.last_message_at && (
-              <Text className="text-xs text-slate-400">
+              <Text className="text-body-sm text-muted-foreground font-body">
                 {format(new Date(item.last_message_at), "h:mm a")}
               </Text>
             )}
           </View>
 
           <View className="flex-row items-center justify-between mt-1">
-            <Text className="text-slate-500 text-sm flex-1 mr-2" numberOfLines={1}>
+            <Text className="text-muted-foreground text-body-sm font-body flex-1 mr-2" numberOfLines={1}>
               {item.last_message_text || "No messages yet"}
             </Text>
 
             {!!item.unread_count && item.unread_count > 0 && (
-              <View className="bg-indigo-600 px-2 py-0.5 rounded-full">
-                <Text className="text-white text-xs font-bold">
+              <View className="bg-primary px-2 py-0.5 rounded-full">
+                <Text className="text-white text-xs font-bold font-body">
                   {item.unread_count}
                 </Text>
               </View>
@@ -212,34 +224,33 @@ export default function ChatsScreen() {
   };
 
   const renderFriendItem = ({ item }: { item: User }) => (
-    <View className="flex-row items-center justify-between p-4 bg-white mb-2 rounded-2xl border border-slate-100">
-      <View className="flex-row items-center">
-        {item.avatar_url ? (
-          <Image
-            source={{ uri: item.avatar_url }}
-            className="w-12 h-12 rounded-full bg-slate-100"
-          />
-        ) : (
-          <View className="w-12 h-12 rounded-full bg-slate-200 items-center justify-center">
-            <Text className="text-slate-600 font-bold text-lg">
-              {item.username.charAt(0).toUpperCase()}
-            </Text>
-          </View>
-        )}
-        <View className="ml-3">
-          <Text className="text-base font-bold text-slate-900">
+    <View className="flex-row items-center justify-between p-4 bg-surface mb-2.5 rounded-radius-lg border border-border shadow-elevation-1">
+      <View className="flex-row items-center flex-1 mr-2">
+        <Avatar isSelf={false}>
+          {item.avatar_url ? (
+            <AvatarImage source={{ uri: item.avatar_url }} />
+          ) : (
+            <AvatarFallback>
+              <Text className="text-foreground font-bold font-body text-body-md">
+                {item.username.charAt(0).toUpperCase()}
+              </Text>
+            </AvatarFallback>
+          )}
+        </Avatar>
+        <View className="ml-3 flex-1">
+          <Text className="text-heading-md font-heading text-foreground" numberOfLines={1}>
             {item.display_name || item.username}
           </Text>
-          <Text className="text-xs text-slate-400">@{item.username}</Text>
+          <Text className="text-body-sm text-muted-foreground font-body">@{item.username}</Text>
         </View>
       </View>
 
       <TouchableOpacity
         onPress={() => handleStartDirectChat(item.id)}
-        className="bg-indigo-50 px-4 py-2 rounded-xl flex-row items-center border border-indigo-100"
+        className="bg-primary/10 px-3.5 py-2 rounded-radius-md flex-row items-center border border-primary/20"
       >
-        <Ionicons name="chatbubble-ellipses-outline" size={16} color="#4f46e5" />
-        <Text className="text-indigo-600 font-bold text-xs ml-1.5">
+        <MessageSquare size={16} color={COLORS.primary} />
+        <Text className="text-primary font-semibold text-body-sm font-body ml-1.5">
           Message
         </Text>
       </TouchableOpacity>
@@ -247,260 +258,265 @@ export default function ChatsScreen() {
   );
 
   return (
-    <View className="flex-1 bg-slate-50">
-      {/* Header */}
-      <View className="bg-white border-b border-slate-200 pt-12 pb-4 px-4">
-        <View className="flex-row items-center justify-between mb-4">
-          <Text className="text-2xl font-bold text-slate-900">Chats</Text>
+    <View className="flex-1 bg-background">
+      <ImageBackground
+        source={require("@/assets/textures/paper-texture.png")}
+        imageStyle={{ opacity: 0.05 }}
+        className="flex-1"
+      >
+        {/* Header */}
+        <View className="bg-surface border-b border-border pt-12 pb-4 px-4 shadow-elevation-1">
+          <View className="flex-row items-center justify-between mb-4">
+            <Text className="text-heading-xl font-display text-foreground">Chats</Text>
 
-          <TouchableOpacity
-            onPress={() => setIsAddFriendModalVisible(true)}
-            className="bg-indigo-50 p-2.5 rounded-full border border-indigo-100"
-          >
-            <Ionicons name="person-add-outline" size={20} color="#4f46e5" />
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity
+              onPress={() => setIsAddFriendModalVisible(true)}
+              className="bg-primary/10 p-2.5 rounded-full border border-primary/20"
+            >
+              <UserPlus size={20} color={COLORS.primary} />
+            </TouchableOpacity>
+          </View>
 
-        {/* Tab Switcher */}
-        <View className="flex-row gap-2 bg-slate-100 p-1 rounded-xl">
-          <TouchableOpacity
-            onPress={() => setActiveTab("chats")}
-            className={`flex-1 py-2 rounded-lg ${
-              activeTab === "chats" ? "bg-white shadow-sm" : ""
-            }`}
-          >
-            <Text
-              className={`text-center font-semibold text-sm ${
-                activeTab === "chats" ? "text-indigo-600" : "text-slate-600"
+          {/* Tab Switcher */}
+          <View className="flex-row gap-2 bg-surface-elevated p-1 rounded-radius-md border border-border">
+            <TouchableOpacity
+              onPress={() => setActiveTab("chats")}
+              className={`flex-1 py-2 rounded-radius-md ${
+                activeTab === "chats" ? "bg-primary shadow-sm" : ""
               }`}
             >
-              Messages
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => setActiveTab("friends")}
-            className={`flex-1 py-2 rounded-lg ${
-              activeTab === "friends" ? "bg-white shadow-sm" : ""
-            }`}
-          >
-            <View className="flex-row items-center justify-center">
               <Text
-                className={`font-semibold text-sm ${
-                  activeTab === "friends" ? "text-indigo-600" : "text-slate-600"
+                className={`text-center font-semibold text-body-sm font-body ${
+                  activeTab === "chats" ? "text-white" : "text-muted-foreground"
                 }`}
               >
-                Friends
+                Messages
               </Text>
-              {pendingRequests.length > 0 && (
-                <View className="bg-red-500 w-2 h-2 rounded-full ml-1.5" />
-              )}
-            </View>
-          </TouchableOpacity>
-        </View>
-      </View>
+            </TouchableOpacity>
 
-      {/* Content */}
-      {loading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#6366f1" />
+            <TouchableOpacity
+              onPress={() => setActiveTab("friends")}
+              className={`flex-1 py-2 rounded-radius-md ${
+                activeTab === "friends" ? "bg-primary shadow-sm" : ""
+              }`}
+            >
+              <View className="flex-row items-center justify-center">
+                <Text
+                  className={`font-semibold text-body-sm font-body ${
+                    activeTab === "friends" ? "text-white" : "text-muted-foreground"
+                  }`}
+                >
+                  Friends
+                </Text>
+                {pendingRequests.length > 0 && (
+                  <View className="bg-secondary w-2 h-2 rounded-full ml-1.5" />
+                )}
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
-      ) : activeTab === "chats" ? (
-        <FlatList
-          data={conversations}
-          renderItem={renderConversationItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ padding: 16 }}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          ListEmptyComponent={
-            <View className="items-center justify-center py-20">
-              <Ionicons name="chatbubbles-outline" size={64} color="#cbd5e1" />
-              <Text className="text-slate-500 mt-4 text-base text-center">
-                No active conversations. Join an activity or message a friend to get started!
-              </Text>
-            </View>
-          }
-        />
-      ) : (
-        <FlatList
-          data={friends}
-          renderItem={renderFriendItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ padding: 16 }}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          ListHeaderComponent={
-            <View>
-              {/* Pending Friend Requests Section */}
-              {pendingRequests.length > 0 && (
-                <View className="mb-6">
-                  <Text className="text-xs font-bold text-slate-400 uppercase mb-3">
-                    Friend Requests ({pendingRequests.length})
-                  </Text>
-                  {pendingRequests.map((req) => (
-                    <View
-                      key={req.id}
-                      className="flex-row items-center justify-between p-4 bg-white mb-2 rounded-2xl border border-indigo-100 bg-indigo-50/50"
-                    >
-                      <View className="flex-row items-center flex-1 mr-2">
-                        <Image
-                          source={{
-                            uri:
-                              req.requester?.avatar_url ||
-                              "https://via.placeholder.com/150",
-                          }}
-                          className="w-10 h-10 rounded-full bg-slate-200"
-                        />
-                        <View className="ml-3 flex-1">
-                          <Text
-                            className="text-sm font-bold text-slate-900"
-                            numberOfLines={1}
+
+        {/* Content */}
+        {loading ? (
+          <View className="flex-1 items-center justify-center">
+            <ActivityIndicator size="large" color={COLORS.primary} />
+          </View>
+        ) : activeTab === "chats" ? (
+          <FlatList
+            data={conversations}
+            renderItem={renderConversationItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{ padding: 16 }}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
+            }
+            ListEmptyComponent={
+              <View className="items-center justify-center py-20">
+                <MessageCircle size={56} color={COLORS.textSecondary} opacity={0.5} />
+                <Text className="text-muted-foreground mt-4 text-body-md font-body text-center">
+                  No active conversations. Join an activity or message a friend to get started!
+                </Text>
+              </View>
+            }
+          />
+        ) : (
+          <FlatList
+            data={friends}
+            renderItem={renderFriendItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{ padding: 16 }}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
+            }
+            ListHeaderComponent={
+              <View>
+                {/* Pending Friend Requests Section */}
+                {pendingRequests.length > 0 && (
+                  <View className="mb-6">
+                    <Text className="text-body-sm font-bold text-muted-foreground uppercase mb-3 font-body">
+                      Friend Requests ({pendingRequests.length})
+                    </Text>
+                    {pendingRequests.map((req) => (
+                      <View
+                        key={req.id}
+                        className="flex-row items-center justify-between p-4 bg-primary/5 mb-2 rounded-radius-lg border border-primary/20"
+                      >
+                        <View className="flex-row items-center flex-1 mr-2">
+                          <Avatar isSelf={false}>
+                            {req.requester?.avatar_url ? (
+                              <AvatarImage source={{ uri: req.requester.avatar_url }} />
+                            ) : (
+                              <AvatarFallback>
+                                <UserIcon size={20} color={COLORS.primary} />
+                              </AvatarFallback>
+                            )}
+                          </Avatar>
+                          <View className="ml-3 flex-1">
+                            <Text
+                              className="text-body-md font-bold text-foreground font-body"
+                              numberOfLines={1}
+                            >
+                              {req.requester?.display_name ||
+                                req.requester?.username}
+                            </Text>
+                            <Text className="text-body-sm text-muted-foreground font-body">
+                              @{req.requester?.username}
+                            </Text>
+                          </View>
+                        </View>
+
+                        <View className="flex-row gap-2">
+                          <TouchableOpacity
+                            onPress={() => handleDeclineRequest(req.id)}
+                            className="p-2 bg-destructive/10 rounded-full border border-destructive/20"
                           >
-                            {req.requester?.display_name ||
-                              req.requester?.username}
+                            <X size={18} color={COLORS.destructive} />
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={() =>
+                              handleAcceptRequest(
+                                req.id,
+                                req.requester_id,
+                              )
+                            }
+                            className="p-2 bg-primary/10 rounded-full border border-primary/20"
+                          >
+                            <Check
+                              size={18}
+                              color={COLORS.primary}
+                            />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                {/* Active Friends List Header */}
+                <Text className="text-body-sm font-bold text-muted-foreground uppercase mb-3 font-body">
+                  My Friends ({friends.length})
+                </Text>
+              </View>
+            }
+            ListEmptyComponent={
+              <View className="items-center justify-center py-12">
+                <Users size={56} color={COLORS.textSecondary} opacity={0.5} />
+                <Text className="text-muted-foreground mt-3 text-body-md font-body text-center">
+                  You haven&apos;t added any friends yet. Tap the button above to search users!
+                </Text>
+              </View>
+            }
+          />
+        )}
+
+        {/* Add Friend Modal */}
+        <Modal
+          visible={isAddFriendModalVisible}
+          animationType="slide"
+          transparent
+        >
+          <View className="flex-1 bg-black/50 justify-end">
+            <Card className="rounded-t-radius-lg h-[80%] p-6 bg-surface">
+              <View className="flex-row items-center justify-between mb-4">
+                <Text className="text-heading-xl font-heading text-foreground">
+                  Find Friends
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    setIsAddFriendModalVisible(false);
+                    setSearchQuery("");
+                    setSearchResults([]);
+                  }}
+                >
+                  <X size={24} color={COLORS.textSecondary} />
+                </TouchableOpacity>
+              </View>
+
+              {/* Search Input */}
+              <View className="mb-4">
+                <Input
+                  value={searchQuery}
+                  onChangeText={handleSearchUsers}
+                  placeholder="Search by username or display name..."
+                  autoCapitalize="none"
+                />
+              </View>
+
+              {/* Search Results List */}
+              {searchLoading ? (
+                <View className="py-10 items-center">
+                  <ActivityIndicator size="small" color={COLORS.primary} />
+                </View>
+              ) : (
+                <FlatList
+                  data={searchResults}
+                  keyExtractor={(item) => item.id}
+                  renderItem={({ item }) => (
+                    <View className="flex-row items-center justify-between py-3 border-b border-border">
+                      <View className="flex-row items-center flex-1 mr-2">
+                        <Avatar isSelf={false}>
+                          {item.avatar_url ? (
+                            <AvatarImage source={{ uri: item.avatar_url }} />
+                          ) : (
+                            <AvatarFallback>
+                              <UserIcon size={20} color={COLORS.primary} />
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
+                        <View className="ml-3 flex-1">
+                          <Text className="text-body-md font-bold text-foreground font-body" numberOfLines={1}>
+                            {item.display_name || item.username}
                           </Text>
-                          <Text className="text-xs text-slate-500">
-                            @{req.requester?.username}
+                          <Text className="text-body-sm text-muted-foreground font-body">
+                            @{item.username}
                           </Text>
                         </View>
                       </View>
 
-                      <View className="flex-row gap-2">
-                        <TouchableOpacity
-                          onPress={() => handleDeclineRequest(req.id)}
-                          className="p-2 bg-red-100 rounded-full"
-                        >
-                          <Ionicons name="close" size={18} color="#ef4444" />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          onPress={() =>
-                            handleAcceptRequest(
-                              req.id,
-                              req.requester_id,
-                            )
-                          }
-                          className="p-2 bg-green-100 rounded-full"
-                        >
-                          <Ionicons
-                            name="checkmark"
-                            size={18}
-                            color="#10b981"
-                          />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              )}
-
-              {/* Active Friends List Header */}
-              <Text className="text-xs font-bold text-slate-400 uppercase mb-3">
-                My Friends ({friends.length})
-              </Text>
-            </View>
-          }
-          ListEmptyComponent={
-            <View className="items-center justify-center py-12">
-              <Ionicons name="people-outline" size={56} color="#cbd5e1" />
-              <Text className="text-slate-500 mt-3 text-base text-center">
-                You haven&apos;t added any friends yet. Tap the button above to search users!
-              </Text>
-            </View>
-          }
-        />
-      )}
-
-      {/* Add Friend Modal */}
-      <Modal
-        visible={isAddFriendModalVisible}
-        animationType="slide"
-        transparent
-      >
-        <View className="flex-1 bg-black/50 justify-end">
-          <View className="bg-white rounded-t-3xl h-[80%] p-6">
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-xl font-bold text-slate-900">
-                Find Friends
-              </Text>
-              <TouchableOpacity
-                onPress={() => {
-                  setIsAddFriendModalVisible(false);
-                  setSearchQuery("");
-                  setSearchResults([]);
-                }}
-              >
-                <Ionicons name="close" size={24} color="#64748b" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Search Input */}
-            <View className="flex-row items-center bg-slate-100 px-4 py-3 rounded-2xl mb-4">
-              <Ionicons name="search" size={20} color="#94a3b8" />
-              <TextInput
-                value={searchQuery}
-                onChangeText={handleSearchUsers}
-                placeholder="Search by username or display name..."
-                placeholderTextColor="#94a3b8"
-                className="flex-1 ml-3 text-slate-900 text-base"
-                autoCapitalize="none"
-              />
-            </View>
-
-            {/* Search Results List */}
-            {searchLoading ? (
-              <View className="py-10 items-center">
-                <ActivityIndicator size="small" color="#6366f1" />
-              </View>
-            ) : (
-              <FlatList
-                data={searchResults}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                  <View className="flex-row items-center justify-between py-3 border-b border-slate-100">
-                    <View className="flex-row items-center flex-1 mr-2">
-                      <Image
-                        source={{
-                          uri:
-                            item.avatar_url ||
-                            "https://via.placeholder.com/150",
-                        }}
-                        className="w-10 h-10 rounded-full bg-slate-200"
-                      />
-                      <View className="ml-3 flex-1">
-                        <Text className="text-sm font-bold text-slate-900" numberOfLines={1}>
-                          {item.display_name || item.username}
+                      <Button
+                        onPress={() => handleSendFriendRequest(item.id)}
+                        variant="default"
+                        size="sm"
+                      >
+                        <Text className="text-white font-semibold text-body-sm font-body">
+                          Add Friend
                         </Text>
-                        <Text className="text-xs text-slate-500">
-                          @{item.username}
-                        </Text>
-                      </View>
+                      </Button>
                     </View>
-
-                    <TouchableOpacity
-                      onPress={() => handleSendFriendRequest(item.id)}
-                      className="bg-indigo-600 px-4 py-2 rounded-xl"
-                    >
-                      <Text className="text-white font-bold text-xs">
-                        Add Friend
+                  )}
+                  ListEmptyComponent={
+                    searchQuery.trim() ? (
+                      <Text className="text-center text-muted-foreground font-body py-8">
+                        No users found
                       </Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-                ListEmptyComponent={
-                  searchQuery.trim() ? (
-                    <Text className="text-center text-slate-400 py-8">
-                      No users found
-                    </Text>
-                  ) : null
-                }
-              />
-            )}
+                    ) : null
+                  }
+                />
+              )}
+            </Card>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      </ImageBackground>
     </View>
   );
 }

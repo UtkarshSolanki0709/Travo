@@ -22,6 +22,13 @@ export interface Conversation {
 
 export type MessageStatus = "sending" | "sent" | "delivered" | "read";
 
+export interface QuotedMessage {
+  id: string;
+  text?: string;
+  sender_name?: string;
+  media_type?: string;
+}
+
 export interface Message {
   id: string;
   conversation_id: string;
@@ -32,6 +39,12 @@ export interface Message {
   client_temp_id?: string;
   created_at: string;
   status?: MessageStatus;
+  reply_to_message_id?: string;
+  reply_to_message?: QuotedMessage;
+  is_edited?: boolean;
+  edited_at?: string;
+  is_deleted?: boolean;
+  deleted_for_user_ids?: string[];
   sender?: {
     id: string;
     username: string;
@@ -120,12 +133,10 @@ export const chatService = {
   async getConversations(userId: string): Promise<Conversation[]> {
     if (!userId) return [];
 
-    // Run sync in background without blocking conversation fetch
     this.syncActivityGroupChats(userId).catch((err) =>
       console.error("syncActivityGroupChats background error:", err),
     );
 
-    // Get participant rows
     const { data: partData, error: partError } = await supabase
       .from("conversation_participants")
       .select("conversation_id, last_read_at, conversation:conversations(*)")
@@ -153,7 +164,6 @@ export const chatService = {
 
       let otherUser = undefined;
 
-      // If 1-on-1 direct chat, fetch the other participant's profile
       if (conv.type === "direct") {
         const { data: otherPart } = await supabase
           .from("conversation_participants")
@@ -167,7 +177,6 @@ export const chatService = {
         }
       }
 
-      // Count unread messages
       let unreadCount = 0;
       if (item.last_read_at) {
         const { count } = await supabase
@@ -195,7 +204,6 @@ export const chatService = {
       });
     }
 
-    // Sort by last message date
     return conversations.sort((a, b) => {
       const timeA = new Date(a.last_message_at || a.created_at).getTime();
       const timeB = new Date(b.last_message_at || b.created_at).getTime();
@@ -210,7 +218,6 @@ export const chatService = {
     userId: string,
     targetUserId: string,
   ): Promise<string> {
-    // Check if conversation already exists
     const { data: myConvs } = await supabase
       .from("conversation_participants")
       .select("conversation_id, conversation:conversations!inner(type)")
@@ -231,7 +238,6 @@ export const chatService = {
       }
     }
 
-    // Create new direct conversation
     const convId = Crypto.randomUUID();
     const { error: convError } = await supabase.from("conversations").insert({
       id: convId,
@@ -241,7 +247,6 @@ export const chatService = {
 
     if (convError) throw convError;
 
-    // Add both participants
     await supabase.from("conversation_participants").insert([
       { conversation_id: convId, user_id: userId, role: "member" },
       { conversation_id: convId, user_id: targetUserId, role: "member" },
@@ -259,7 +264,6 @@ export const chatService = {
   ): Promise<Message[]> {
     let data: any[] | null = null;
 
-    // Try primary query with embedded sender & receipts
     const { data: primaryData, error: primaryError } = await supabase
       .from("messages")
       .select(
@@ -271,7 +275,6 @@ export const chatService = {
     if (!primaryError && primaryData) {
       data = primaryData;
     } else {
-      // Fallback query if constraint name differs on remote Supabase
       console.warn("Primary getMessages select failed, trying fallback...", primaryError);
       const { data: fallbackData, error: fallbackError } = await supabase
         .from("messages")
@@ -284,7 +287,6 @@ export const chatService = {
         throw fallbackError;
       }
 
-      // Fetch senders for fallback messages
       if (fallbackData && fallbackData.length > 0) {
         const senderIds = Array.from(
           new Set(fallbackData.map((m: any) => m.sender_id).filter(Boolean)),
@@ -305,7 +307,18 @@ export const chatService = {
       }
     }
 
-    return (data || []).map((msg: any) => {
+    const filtered = (data || []).filter((msg: any) => {
+      if (
+        msg.deleted_for_user_ids &&
+        Array.isArray(msg.deleted_for_user_ids) &&
+        msg.deleted_for_user_ids.includes(currentUserId)
+      ) {
+        return false;
+      }
+      return true;
+    });
+
+    return filtered.map((msg: any) => {
       let status: MessageStatus = "sent";
 
       if (msg.sender_id === currentUserId && msg.receipts) {
@@ -335,22 +348,33 @@ export const chatService = {
     mediaUrl?: string,
     mediaType?: "image" | "video" | "audio" | "location",
     clientTempId?: string,
+    replyToMessageId?: string,
+    replyToMessage?: QuotedMessage,
   ): Promise<Message> {
     const id = Crypto.randomUUID();
     const now = new Date().toISOString();
 
+    const insertPayload: any = {
+      id,
+      conversation_id: conversationId,
+      sender_id: senderId,
+      text,
+      media_url: mediaUrl,
+      media_type: mediaType,
+      client_temp_id: clientTempId,
+      created_at: now,
+    };
+
+    if (replyToMessageId) {
+      insertPayload.reply_to_message_id = replyToMessageId;
+    }
+    if (replyToMessage) {
+      insertPayload.reply_to_message = replyToMessage;
+    }
+
     const { data, error } = await supabase
       .from("messages")
-      .insert({
-        id,
-        conversation_id: conversationId,
-        sender_id: senderId,
-        text,
-        media_url: mediaUrl,
-        media_type: mediaType,
-        client_temp_id: clientTempId,
-        created_at: now,
-      })
+      .insert(insertPayload)
       .select("*")
       .single();
 
@@ -359,7 +383,19 @@ export const chatService = {
       throw error;
     }
 
-    // Fetch sender info separately if needed
+    // Update conversation last_message_text & last_message_at
+    const previewText = mediaType
+      ? `[${mediaType.charAt(0).toUpperCase() + mediaType.slice(1)}] ${text || ""}`.trim()
+      : text;
+
+    await supabase
+      .from("conversations")
+      .update({
+        last_message_text: previewText,
+        last_message_at: now,
+      })
+      .eq("id", conversationId);
+
     const { data: sender } = await supabase
       .from("users")
       .select("*")
@@ -371,6 +407,127 @@ export const chatService = {
       sender: sender || undefined,
       status: "sent",
     };
+  },
+
+  /**
+   * Edit a sent message
+   */
+  async editMessage(
+    messageId: string,
+    userId: string,
+    newText: string,
+  ): Promise<Message> {
+    const now = new Date().toISOString();
+
+    const { data, error } = await supabase
+      .from("messages")
+      .update({
+        text: newText,
+        is_edited: true,
+        edited_at: now,
+      })
+      .eq("id", messageId)
+      .eq("sender_id", userId)
+      .select("*")
+      .single();
+
+    if (error) {
+      console.error("editMessage DB error:", error);
+      throw error;
+    }
+
+    const { data: sender } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", userId)
+      .maybeSingle();
+
+    const updatedMessage = {
+      ...data,
+      sender: sender || undefined,
+    };
+
+    // Broadcast edit over socket
+    socketService.emitEditMessage(updatedMessage);
+
+    return updatedMessage;
+  },
+
+  /**
+   * Delete message for everyone (Soft delete)
+   */
+  async deleteMessageForEveryone(
+    messageId: string,
+    userId: string,
+    conversationId: string,
+  ): Promise<Message> {
+    const { data, error } = await supabase
+      .from("messages")
+      .update({
+        text: "This message was deleted",
+        media_url: null,
+        media_type: null,
+        is_deleted: true,
+      })
+      .eq("id", messageId)
+      .eq("sender_id", userId)
+      .select("*")
+      .single();
+
+    if (error) {
+      console.error("deleteMessageForEveryone DB error:", error);
+      throw error;
+    }
+
+    // Update conversation last_message_text if this was the last message
+    const { data: latestMsgs } = await supabase
+      .from("messages")
+      .select("id, text")
+      .eq("conversation_id", conversationId)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (latestMsgs && latestMsgs[0]?.id === messageId) {
+      await supabase
+        .from("conversations")
+        .update({
+          last_message_text: "This message was deleted",
+        })
+        .eq("id", conversationId);
+    }
+
+    const deletedMessage = {
+      ...data,
+    };
+
+    socketService.emitDeleteMessage({
+      messageId,
+      conversationId,
+      deleteForEveryone: true,
+      deletedMessage,
+    });
+
+    return deletedMessage;
+  },
+
+  /**
+   * Delete message for current user only
+   */
+  async deleteMessageForMe(messageId: string, userId: string): Promise<void> {
+    const { data: msg } = await supabase
+      .from("messages")
+      .select("deleted_for_user_ids")
+      .eq("id", messageId)
+      .single();
+
+    const existingIds = (msg?.deleted_for_user_ids as string[]) || [];
+    if (!existingIds.includes(userId)) {
+      const updatedIds = [...existingIds, userId];
+      await supabase
+        .from("messages")
+        .update({ deleted_for_user_ids: updatedIds })
+        .eq("id", messageId);
+    }
   },
 
   /**
@@ -430,14 +587,16 @@ export const chatService = {
   },
 
   /**
-   * Real-time subscription to incoming messages & receipts (Socket.io + Supabase Realtime Hybrid)
+   * Real-time subscription to incoming messages & receipts & updates
    */
   subscribeToMessages(
     conversationId: string,
     onMessage: (msg: Message) => void,
     onReceipt: (receipt: any) => void,
+    onMessageEdited?: (msg: Message) => void,
+    onMessageDeleted?: (data: { messageId: string; deleteForEveryone: boolean }) => void,
+    onTyping?: (data: { userId: string; isTyping: boolean }) => void,
   ) {
-    // 1. Socket.io listeners
     const unsubSocketMsg = socketService.onNewMessage((payload) => {
       if (!payload) return;
       const targetConvId = payload.conversation_id || payload.conversationId;
@@ -457,10 +616,32 @@ export const chatService = {
       }
     });
 
-    // 2. Join Socket room for this conversation
+    const unsubSocketEdit = socketService.onMessageEdited((payload) => {
+      if (!payload) return;
+      const targetConvId = payload.conversation_id || payload.conversationId;
+      if (!targetConvId || targetConvId === conversationId) {
+        onMessageEdited?.(payload);
+      }
+    });
+
+    const unsubSocketDelete = socketService.onMessageDeleted((payload) => {
+      if (!payload) return;
+      const targetConvId = payload.conversationId || payload.conversation_id;
+      if (!targetConvId || targetConvId === conversationId) {
+        onMessageDeleted?.(payload);
+      }
+    });
+
+    const unsubSocketTyping = socketService.onTypingStatus((payload) => {
+      if (!payload) return;
+      const targetConvId = payload.conversationId || (payload as any).conversation_id;
+      if (!targetConvId || targetConvId === conversationId) {
+        onTyping?.(payload);
+      }
+    });
+
     socketService.joinConversation(conversationId);
 
-    // 3. Supabase Realtime Fallback Listener
     const channelTopic = `chat_room_${conversationId}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
     const channel = supabase.channel(channelTopic);
 
@@ -495,6 +676,27 @@ export const chatService = {
       .on(
         "postgres_changes",
         {
+          event: "UPDATE",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          if (payload?.new) {
+            if (payload.new.is_deleted) {
+              onMessageDeleted?.({
+                messageId: payload.new.id,
+                deleteForEveryone: true,
+              });
+            } else if (payload.new.is_edited) {
+              onMessageEdited?.(payload.new as Message);
+            }
+          }
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
           event: "*",
           schema: "public",
           table: "message_receipts",
@@ -514,6 +716,9 @@ export const chatService = {
     return () => {
       unsubSocketMsg();
       unsubSocketSeen();
+      unsubSocketEdit();
+      unsubSocketDelete();
+      unsubSocketTyping();
       socketService.leaveConversation(conversationId);
       supabase.removeChannel(channel);
     };

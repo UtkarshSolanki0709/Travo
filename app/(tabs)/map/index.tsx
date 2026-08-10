@@ -7,7 +7,8 @@ import { database, type Activity } from "@/services/database";
 import { reverseGeocode, searchAll } from "@/services/geoapify";
 import { getRoute, LatLng } from "@/services/routes";
 import { useUser } from "@clerk/clerk-expo";
-import { Ionicons } from "@expo/vector-icons";
+import { Crosshair, Menu, X, MapPin, User, ChevronRight } from "lucide-react-native";
+import { COLORS } from "@/lib/theme";
 import * as Location from "expo-location";
 import { useFocusEffect, useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
@@ -523,31 +524,31 @@ const ACTIVITY_FETCH_DISTANCE_THRESHOLD = 0.5; // 500m
       {/* Recenter Button */}
       <View className="absolute right-4 bottom-32 z-30">
         <TouchableOpacity
-          className="h-11 w-11 items-center justify-center rounded-full bg-white shadow-lg"
+          className="h-12 w-12 items-center justify-center rounded-full bg-surface border border-border shadow-elevation-2"
           onPress={recenter}
         >
-          <Ionicons name="locate" size={24} color="#6366f1" />
+          <Crosshair size={22} color={COLORS.primary} />
         </TouchableOpacity>
       </View>
 
       {/* Floating Menu Toggle */}
       <View className="absolute right-4 top-12 z-30">
         <TouchableOpacity
-          className="h-11 w-11 items-center justify-center rounded-full bg-white shadow-lg"
+          className="h-12 w-12 items-center justify-center rounded-full bg-surface border border-border shadow-elevation-2"
           onPress={() => setIsMenuOpen(true)}
         >
-          <Ionicons name="menu" size={24} color="#0f172a" />
+          <Menu size={22} color={COLORS.textPrimary} />
         </TouchableOpacity>
       </View>
 
       {/* Search Box */}
-      <View className="absolute left-4 right-16 top-12 z-20 rounded-2xl bg-white/95 p-3 shadow-lg">
+      <View className="absolute left-4 right-18 top-12 z-20 rounded-radius-md bg-surface/95 p-3 shadow-elevation-2 border border-border">
         <TextInput
           placeholder="Search for a place, cafe, etc..."
-          placeholderTextColor="#94a3b8"
+          placeholderTextColor={COLORS.textSecondary}
           value={query}
           onChangeText={handleSearch}
-          className="h-11 rounded-xl bg-slate-100 px-4 text-base text-slate-900"
+          className="h-11 rounded-radius-md bg-surface-elevated px-4 text-body-md text-foreground font-body border border-border"
         />
         {results.length > 0 && (
           <FlatList
@@ -557,10 +558,10 @@ const ACTIVITY_FETCH_DISTANCE_THRESHOLD = 0.5; // 500m
             className="mt-2 max-h-56"
             renderItem={({ item }) => (
               <TouchableOpacity
-                className="border-b border-slate-100 py-3"
+                className="border-b border-border py-3"
                 onPress={() => handleSelectPlace(item)}
               >
-                <Text className="text-sm text-slate-700" numberOfLines={2}>
+                <Text className="text-body-sm text-foreground font-body" numberOfLines={2}>
                   {item.place_name}
                 </Text>
               </TouchableOpacity>
@@ -585,32 +586,32 @@ const ACTIVITY_FETCH_DISTANCE_THRESHOLD = 0.5; // 500m
       {/* Menu Modal */}
       <Modal transparent visible={isMenuOpen} animationType="fade">
         <Pressable
-          className="flex-1 bg-slate-900/20"
+          className="flex-1 bg-black/30"
           onPress={() => setIsMenuOpen(false)}
         />
-        <View className="absolute right-4 top-24 w-72 rounded-2xl bg-white p-4 shadow-xl">
+        <View className="absolute right-4 top-24 w-72 rounded-radius-lg bg-surface p-4 shadow-elevation-4 border border-border">
           <View className="mb-3 flex-row items-center justify-between">
-            <Text className="text-base font-semibold text-slate-900">
+            <Text className="text-heading-md font-heading text-foreground">
               Map Menu
             </Text>
             <TouchableOpacity onPress={() => setIsMenuOpen(false)}>
-              <Ionicons name="close" size={20} color="#64748b" />
+              <X size={20} color={COLORS.textSecondary} />
             </TouchableOpacity>
           </View>
-          <View className="mb-3 rounded-xl bg-slate-50 px-3 py-3">
-            <Text className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <View className="mb-3 rounded-radius-md bg-surface-elevated px-3 py-3 border border-border">
+            <Text className="mb-2 text-body-sm font-semibold uppercase tracking-wide text-muted-foreground font-body">
               Quick Settings
             </Text>
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center">
-                <Ionicons name="location-outline" size={20} color="#6366f1" />
-                <Text className="ml-2 text-sm font-semibold text-slate-800">
+                <MapPin size={18} color={COLORS.primary} />
+                <Text className="ml-2 text-body-md font-semibold text-foreground font-body">
                   Live Tracking
                 </Text>
               </View>
               <Switch
-                trackColor={{ false: "#e2e8f0", true: "#a5b4fc" }}
-                thumbColor={isLocationEnabled ? "#6366f1" : "#f1f5f9"}
+                trackColor={{ false: COLORS.border, true: COLORS.primary }}
+                thumbColor={isLocationEnabled ? COLORS.surface : COLORS.border}
                 onValueChange={handleToggleLocation}
                 value={isLocationEnabled}
                 disabled={!clerkUser}
@@ -625,12 +626,12 @@ const ACTIVITY_FETCH_DISTANCE_THRESHOLD = 0.5; // 500m
             }}
           >
             <View className="flex-row items-center">
-              <Ionicons name="person-outline" size={20} color="#6366f1" />
-              <Text className="ml-2 text-sm font-semibold text-slate-800">
+              <User size={18} color={COLORS.primary} />
+              <Text className="ml-2 text-body-md font-semibold text-foreground font-body">
                 Account Settings
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color="#cbd5e1" />
+            <ChevronRight size={18} color={COLORS.textSecondary} />
           </TouchableOpacity>
           {clerkUser ? (
             <View className="mt-2 rounded-xl bg-slate-50">

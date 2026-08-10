@@ -1,6 +1,8 @@
 import { getAvatarUrl, getOptimizedUrl } from "@/lib/cloudinary";
 import { Post, PostComment } from "@/services/database";
-import { Ionicons } from "@expo/vector-icons";
+import { User as UserIcon, MoreHorizontal, X, Edit3, Trash2, Heart, MessageSquare, Send } from "lucide-react-native";
+import { COLORS } from "@/lib/theme";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { VideoView } from "expo-video";
 import { useState } from "react";
 import {
@@ -108,12 +110,15 @@ export default function PostDetailModal({
           <View className="flex-row justify-between items-center p-4 border-b border-slate-100">
             <View className="flex-row items-center gap-3">
               {post?.user?.avatar_url ? (
-                <Image
-                  source={{ uri: getAvatarUrl(post.user.avatar_url, 80) }}
-                  className="w-10 h-10 rounded-full"
-                />
+                <Avatar isSelf={false} className="size-10">
+                  <AvatarImage source={{ uri: getAvatarUrl(post.user.avatar_url, 80) }} />
+                </Avatar>
               ) : (
-                <Ionicons name="person-circle" size={40} color="#6366f1" />
+                <Avatar isSelf={false} className="size-10">
+                  <AvatarFallback>
+                    <UserIcon size={20} color={COLORS.primary} />
+                  </AvatarFallback>
+                </Avatar>
               )}
               <View>
                 <Text className="font-bold text-base text-slate-800">
@@ -131,15 +136,11 @@ export default function PostDetailModal({
                 <TouchableOpacity
                   onPress={() => setShowPostOptions(!showPostOptions)}
                 >
-                  <Ionicons
-                    name="ellipsis-horizontal"
-                    size={24}
-                    color="#64748b"
-                  />
+                  <MoreHorizontal size={24} color={COLORS.textSecondary} />
                 </TouchableOpacity>
               )}
               <TouchableOpacity onPress={onClose}>
-                <Ionicons name="close" size={24} color="#64748b" />
+                <X size={24} color={COLORS.textSecondary} />
               </TouchableOpacity>
             </View>
           </View>
@@ -153,14 +154,14 @@ export default function PostDetailModal({
                   setShowPostOptions(false);
                 }}
               >
-                <Ionicons name="create-outline" size={20} color="#6366f1" />
+                <Edit3 size={20} color={COLORS.primary} />
                 <Text className="text-slate-700 font-medium">Edit Post</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 className="flex-row items-center p-4 gap-3 border-t border-slate-200"
                 onPress={handleDeletePost}
               >
-                <Ionicons name="trash-outline" size={20} color="#ef4444" />
+                <Trash2 size={20} color={COLORS.destructive} />
                 <Text className="text-red-600 font-medium">Delete Post</Text>
               </TouchableOpacity>
             </View>
@@ -190,17 +191,16 @@ export default function PostDetailModal({
             <View className="p-4">
               <View className="flex-row gap-4 mb-3">
                 <TouchableOpacity onPress={onToggleLike} className="p-1">
-                  <Ionicons
-                    name={post?.is_liked ? "heart" : "heart-outline"}
-                    size={28}
-                    color={post?.is_liked ? "#ef4444" : "#64748b"}
+                  <Heart
+                    size={26}
+                    color={post?.is_liked ? COLORS.destructive : COLORS.textSecondary}
+                    fill={post?.is_liked ? COLORS.destructive : "none"}
                   />
                 </TouchableOpacity>
                 <TouchableOpacity className="p-1">
-                  <Ionicons
-                    name="chatbubble-outline"
-                    size={26}
-                    color="#64748b"
+                  <MessageSquare
+                    size={24}
+                    color={COLORS.textSecondary}
                   />
                 </TouchableOpacity>
               </View>
@@ -225,18 +225,15 @@ export default function PostDetailModal({
                   <View key={comment.id} className="mb-4">
                     <View className="flex-row gap-2.5">
                       {comment.user?.avatar_url ? (
-                        <Image
-                          source={{
-                            uri: getAvatarUrl(comment.user.avatar_url, 60),
-                          }}
-                          className="w-8 h-8 rounded-full"
-                        />
+                        <Avatar isSelf={false} className="size-8">
+                          <AvatarImage source={{ uri: getAvatarUrl(comment.user.avatar_url, 60) }} />
+                        </Avatar>
                       ) : (
-                        <Ionicons
-                          name="person-circle"
-                          size={32}
-                          color="#94a3b8"
-                        />
+                        <Avatar isSelf={false} className="size-8">
+                          <AvatarFallback>
+                            <UserIcon size={16} color={COLORS.primary} />
+                          </AvatarFallback>
+                        </Avatar>
                       )}
                       <View className="flex-1">
                         <View className="flex-row justify-between items-start">
@@ -253,11 +250,7 @@ export default function PostDetailModal({
                               onPress={() => handleDeleteComment(comment.id)}
                               className="ml-2"
                             >
-                              <Ionicons
-                                name="trash-outline"
-                                size={16}
-                                color="#94a3b8"
-                              />
+                              <Trash2 size={16} color={COLORS.textSecondary} />
                             </TouchableOpacity>
                           )}
                         </View>
@@ -283,7 +276,7 @@ export default function PostDetailModal({
                             <TouchableOpacity
                               onPress={() => handleReply(comment.id)}
                             >
-                              <Ionicons name="send" size={20} color="#6366f1" />
+                              <Send size={18} color={COLORS.primary} />
                             </TouchableOpacity>
                             <TouchableOpacity
                               onPress={() => {
@@ -291,11 +284,7 @@ export default function PostDetailModal({
                                 setReplyText("");
                               }}
                             >
-                              <Ionicons
-                                name="close"
-                                size={20}
-                                color="#94a3b8"
-                              />
+                              <X size={18} color={COLORS.textSecondary} />
                             </TouchableOpacity>
                           </View>
                         )}

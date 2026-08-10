@@ -4,47 +4,64 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
-    --radius: 0.5rem;
-  }
+    /* ───── Core Identity (DESIGN.md Section 1) ───── */
+    --background: 38 100% 99%;       /* #fefcf9 — warm off-white */
+    --foreground: 222 55% 11%;       /* #0f1729 — deep navy text */
 
-  .dark:root {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --surface: 0 0% 100%;            /* #ffffff */
+    --surface-elevated: 210 40% 98%; /* #f8fafc */
+
+    --primary: 174 84% 32%;          /* #0d9488 — teal-700 */
+    --primary-foreground: 0 0% 100%; /* white on teal */
+
+    --secondary: 21 90% 48%;         /* #ea580c — orange-500 */
+    --secondary-foreground: 0 0% 100%;
+
+    --accent: 38 92% 50%;            /* #f59e0b — amber-500 */
+    --accent-foreground: 222 55% 11%; /* dark text on amber (contrast) */
+
+    --destructive: 0 84% 60%;        /* #ef4444 — red */
+    --destructive-foreground: 0 0% 100%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%; /* #64748b — text secondary */
+
+    --card: 0 0% 100%;               /* #ffffff */
+    --card-foreground: 222 55% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 55% 11%;
+
+    --border: 214 32% 91%;           /* #e2e8f0 */
+    --input: 214 32% 91%;
+    --ring: 174 84% 32%;             /* teal-700 for focus rings */
+
+    /* ───── Activity Category Colors ───── */
+    --category-food: 24 95% 53%;     /* #f97316 */
+    --category-sports: 160 60% 45%;  /* #10b981 */
+    --category-arts: 263 70% 66%;    /* #8b5cf6 */
+    --category-nightlife: 80 65% 45%;/* #84cc16 */
+    --category-music: 189 94% 43%;   /* #06b6d4 */
+
+    /* ───── Spacing (4px base unit) ───── */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
+    --space-12: 48px;
+
+    /* ───── Radius ───── */
+    --radius-md: 16px;
+    --radius-lg: 24px;
+    --radius-full: 9999px;
+    --radius: 0.5rem;
+
+    /* ───── Gradients (reference only — applied via expo-linear-gradient) ───── */
+    /* Sunrise: 135deg, #14b8a8 → #f59e0b — primary CTA + hero header ONLY */
+    /* Twilight: 135deg, #0d9488 → #0ea5e9 — modal/sheet header strip ONLY */
   }
 }

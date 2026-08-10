@@ -1,7 +1,9 @@
 import CreateActivityModal from "@/components/CreateActivityModal";
 import { database, type Activity } from "@/services/database";
 import { useUser } from "@clerk/clerk-expo";
-import { Ionicons } from "@expo/vector-icons";
+import { X, Calendar, MapPin, Edit3, Trash2, Check, User as UserIcon } from "lucide-react-native";
+import { COLORS } from "@/lib/theme";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format } from "date-fns";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -220,7 +222,7 @@ export default function ActivityDetailsModal({
               Activity Details
             </Text>
             <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color="#64748b" />
+              <X size={22} color={COLORS.textSecondary} />
             </TouchableOpacity>
           </View>
 
@@ -237,11 +239,7 @@ export default function ActivityDetailsModal({
                     {displayActivity.title}
                   </Text>
                   <View className="flex-row items-center mb-2">
-                    <Ionicons
-                      name="calendar-outline"
-                      size={18}
-                      color="#6366f1"
-                    />
+                    <Calendar size={18} color={COLORS.primary} />
                     <Text className="text-slate-600 ml-2">
                       {format(
                         new Date(displayActivity.start_time),
@@ -251,11 +249,7 @@ export default function ActivityDetailsModal({
                   </View>
                   {displayActivity.city && (
                     <View className="flex-row items-center mb-2">
-                      <Ionicons
-                        name="location-outline"
-                        size={18}
-                        color="#6366f1"
-                      />
+                      <MapPin size={18} color={COLORS.primary} />
                       <Text className="text-slate-600 ml-2">
                         {displayActivity.city}
                       </Text>
@@ -352,27 +346,19 @@ export default function ActivityDetailsModal({
                       <View className="flex-row gap-2">
                         <TouchableOpacity
                           onPress={() => setEditModalVisible(true)}
-                          className="flex-row items-center bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100"
+                          className="flex-row items-center bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20"
                         >
-                          <Ionicons
-                            name="create-outline"
-                            size={16}
-                            color="#4f46e5"
-                          />
-                          <Text className="text-indigo-600 font-bold text-xs ml-1.5">
+                          <Edit3 size={16} color={COLORS.primary} />
+                          <Text className="text-primary font-bold text-xs ml-1.5">
                             Edit
                           </Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                           onPress={handleDelete}
-                          className="flex-row items-center bg-red-50 px-3 py-1.5 rounded-lg border border-red-100"
+                          className="flex-row items-center bg-destructive/10 px-3 py-1.5 rounded-lg border border-destructive/20"
                         >
-                          <Ionicons
-                            name="trash-outline"
-                            size={16}
-                            color="#ef4444"
-                          />
-                          <Text className="text-red-600 font-bold text-xs ml-1.5">
+                          <Trash2 size={16} color={COLORS.destructive} />
+                          <Text className="text-destructive font-bold text-xs ml-1.5">
                             Delete
                           </Text>
                         </TouchableOpacity>
@@ -415,23 +401,15 @@ export default function ActivityDetailsModal({
                             <View className="flex-row gap-2">
                               <TouchableOpacity
                                 onPress={() => handleReject(req.user_id)}
-                                className="p-2 bg-red-50 rounded-full"
+                                className="p-2 bg-destructive/10 rounded-full"
                               >
-                                <Ionicons
-                                  name="close"
-                                  size={18}
-                                  color="#ef4444"
-                                />
+                                <X size={18} color={COLORS.destructive} />
                               </TouchableOpacity>
                               <TouchableOpacity
                                 onPress={() => handleApprove(req.user_id)}
-                                className="p-2 bg-green-50 rounded-full"
+                                className="p-2 bg-primary/10 rounded-full"
                               >
-                                <Ionicons
-                                  name="checkmark"
-                                  size={18}
-                                  color="#10b981"
-                                />
+                                <Check size={18} color={COLORS.primary} />
                               </TouchableOpacity>
                             </View>
                           </View>

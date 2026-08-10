@@ -1,4 +1,5 @@
-import { Ionicons } from "@expo/vector-icons";
+import { X, XCircle, Image as ImageIcon, MapPin, Compass, Pin, Globe, Users } from "lucide-react-native";
+import { COLORS } from "@/lib/theme";
 import { VideoView, useVideoPlayer } from "expo-video";
 import {
   ActivityIndicator,
@@ -92,7 +93,7 @@ export default function CreatePostModal({
               Create New Post
             </Text>
             <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color="#64748b" />
+              <X size={22} color={COLORS.textSecondary} />
             </TouchableOpacity>
           </View>
 
@@ -124,15 +125,15 @@ export default function CreatePostModal({
                     />
                   )}
                   <TouchableOpacity
-                    className="absolute top-2.5 right-2.5 bg-white rounded-xl"
+                    className="absolute top-2.5 right-2.5 bg-white rounded-full p-0.5"
                     onPress={onRemoveMedia}
                   >
-                    <Ionicons name="close-circle" size={24} color="#ef4444" />
+                    <XCircle size={22} color={COLORS.destructive} />
                   </TouchableOpacity>
                 </View>
               ) : (
                 <>
-                  <Ionicons name="image-outline" size={48} color="#94a3b8" />
+                  <ImageIcon size={44} color={COLORS.textSecondary} />
                   <Text className="mt-3 text-slate-500 text-[15px]">
                     Add Photo or Video
                   </Text>
@@ -152,15 +153,14 @@ export default function CreatePostModal({
             <View className="flex-row items-center mb-4 px-1 gap-4">
               <TouchableOpacity
                 onPress={() => onVisibilityChange("public")}
-                className={`flex-row items-center px-4 py-2 rounded-full border ${visibility === "public" ? "bg-indigo-50 border-indigo-200" : "bg-white border-slate-200"}`}
+                className={`flex-row items-center px-4 py-2 rounded-full border ${visibility === "public" ? "bg-primary/10 border-primary/20" : "bg-white border-slate-200"}`}
               >
-                <Ionicons
-                  name="globe-outline"
+                <Globe
                   size={14}
-                  color={visibility === "public" ? "#6366f1" : "#64748b"}
+                  color={visibility === "public" ? COLORS.primary : COLORS.textSecondary}
                 />
                 <Text
-                  className={`text-[12px] font-medium ml-1.5 ${visibility === "public" ? "text-indigo-600" : "text-slate-500"}`}
+                  className={`text-[12px] font-medium ml-1.5 ${visibility === "public" ? "text-primary" : "text-slate-500"}`}
                 >
                   Public
                 </Text>
@@ -168,15 +168,14 @@ export default function CreatePostModal({
 
               <TouchableOpacity
                 onPress={() => onVisibilityChange("friends")}
-                className={`flex-row items-center px-4 py-2 rounded-full border ${visibility === "friends" ? "bg-indigo-50 border-indigo-200" : "bg-white border-slate-200"}`}
+                className={`flex-row items-center px-4 py-2 rounded-full border ${visibility === "friends" ? "bg-primary/10 border-primary/20" : "bg-white border-slate-200"}`}
               >
-                <Ionicons
-                  name="people-outline"
+                <Users
                   size={14}
-                  color={visibility === "friends" ? "#6366f1" : "#64748b"}
+                  color={visibility === "friends" ? COLORS.primary : COLORS.textSecondary}
                 />
                 <Text
-                  className={`text-[12px] font-medium ml-1.5 ${visibility === "friends" ? "text-indigo-600" : "text-slate-500"}`}
+                  className={`text-[12px] font-medium ml-1.5 ${visibility === "friends" ? "text-primary" : "text-slate-500"}`}
                 >
                   Friends
                 </Text>
@@ -184,7 +183,7 @@ export default function CreatePostModal({
             </View>
 
             <View className="flex-row items-center bg-slate-50 rounded-xl px-3 border border-slate-200">
-              <Ionicons name="location-outline" size={20} color="#6366f1" />
+              <MapPin size={18} color={COLORS.primary} />
               <TextInput
                 className="flex-1 p-3 text-base"
                 placeholder="Place (e.g. Starburst Cafe, Eiffel Tower)"
@@ -192,15 +191,15 @@ export default function CreatePostModal({
                 onChangeText={onVenueSearch}
               />
               {isSearchingVenue && (
-                <ActivityIndicator size="small" color="#6366f1" />
+                <ActivityIndicator size="small" color={COLORS.primary} />
               )}
             </View>
 
             {(postCity || postCountry) && (
               <View className="flex-row items-center mt-2 px-1">
-                <View className="bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-100 flex-row items-center">
-                  <Ionicons name="map-outline" size={12} color="#6366f1" />
-                  <Text className="text-[11px] text-indigo-600 font-medium ml-1">
+                <View className="bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20 flex-row items-center">
+                  <Compass size={12} color={COLORS.primary} />
+                  <Text className="text-[11px] text-primary font-medium ml-1">
                     {[postCity, postCountry].filter(Boolean).join(", ")}
                   </Text>
                 </View>
@@ -217,7 +216,7 @@ export default function CreatePostModal({
                       className="flex-row items-center p-3 border-b border-slate-100 gap-2.5"
                       onPress={() => onSelectVenue(item)}
                     >
-                      <Ionicons name="pin-outline" size={16} color="#64748b" />
+                      <Pin size={16} color={COLORS.textSecondary} />
                       <View className="flex-1">
                         <Text
                           className="text-[14px] font-semibold text-slate-800"
@@ -242,7 +241,7 @@ export default function CreatePostModal({
             )}
 
             <View className="flex-row items-center bg-slate-50 rounded-xl px-3 border border-slate-200 mt-3">
-              <Ionicons name="globe-outline" size={20} color="#6366f1" />
+              <Globe size={18} color={COLORS.primary} />
               <TextInput
                 className="flex-1 p-3 text-base"
                 placeholder="Search location..."
@@ -250,7 +249,7 @@ export default function CreatePostModal({
                 onChangeText={onLocationSearch}
               />
               {isSearchingLocation && (
-                <ActivityIndicator size="small" color="#6366f1" />
+                <ActivityIndicator size="small" color={COLORS.primary} />
               )}
             </View>
 
@@ -264,7 +263,7 @@ export default function CreatePostModal({
                       className="flex-row items-center p-3 border-b border-slate-100 gap-2.5"
                       onPress={() => onSelectLocation(item)}
                     >
-                      <Ionicons name="map-outline" size={16} color="#64748b" />
+                      <Compass size={16} color={COLORS.textSecondary} />
                       <View className="flex-1">
                         <Text
                           className="text-[14px] font-semibold text-slate-800"

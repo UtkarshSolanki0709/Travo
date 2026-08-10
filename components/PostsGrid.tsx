@@ -1,14 +1,14 @@
 import { getOptimizedUrl, getVideoThumbUrl } from "@/lib/cloudinary";
 import { Post } from "@/services/database";
-import { Ionicons } from "@expo/vector-icons";
-import { ComponentProps } from "react";
+import { COLORS } from "@/lib/theme";
+import { Play, LucideIcon } from "lucide-react-native";
 import {
-    ActivityIndicator,
-    Dimensions,
-    Image,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Dimensions,
+  Image,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 const { width } = Dimensions.get("window");
@@ -18,7 +18,7 @@ interface PostsGridProps {
   posts: Post[];
   loading: boolean;
   emptyMessage: string;
-  emptyIcon: ComponentProps<typeof Ionicons>["name"];
+  emptyIcon?: LucideIcon;
   onPostPress: (post: Post) => void;
 }
 
@@ -26,13 +26,13 @@ export default function PostsGrid({
   posts,
   loading,
   emptyMessage,
-  emptyIcon,
+  emptyIcon: EmptyIcon,
   onPostPress,
 }: PostsGridProps) {
   if (loading) {
     return (
       <View className="p-10">
-        <ActivityIndicator size="large" color="#6366f1" />
+        <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
   }
@@ -40,8 +40,10 @@ export default function PostsGrid({
   if (posts.length === 0) {
     return (
       <View className="w-full p-10 items-center justify-center">
-        <Ionicons name={emptyIcon} size={48} color="#e2e8f0" />
-        <Text className="mt-3 text-slate-400 text-sm">{emptyMessage}</Text>
+        {EmptyIcon ? (
+          <EmptyIcon size={48} color={COLORS.textSecondary} opacity={0.5} />
+        ) : null}
+        <Text className="mt-3 text-muted-foreground text-body-sm font-body">{emptyMessage}</Text>
       </View>
     );
   }
@@ -52,7 +54,7 @@ export default function PostsGrid({
         <TouchableOpacity
           key={post.id}
           style={{ width: Math.round(COLUMN_WIDTH), height: Math.round(COLUMN_WIDTH) }}
-          className="rounded-xl overflow-hidden bg-white border border-slate-100"
+          className="rounded-radius-md overflow-hidden bg-surface border border-border shadow-elevation-1"
           onPress={() => onPostPress(post)}
         >
           {post.media_url ? (
@@ -72,18 +74,18 @@ export default function PostsGrid({
               className="w-full h-full"
             />
           ) : (
-            <View className="flex-1 p-2 bg-slate-50 justify-center">
+            <View className="flex-1 p-2 bg-surface-elevated justify-center">
               <Text
                 numberOfLines={3}
-                className="text-[10px] text-slate-500 text-center"
+                className="text-xs text-muted-foreground text-center font-body"
               >
                 {post.text}
               </Text>
             </View>
           )}
           {post.media_type === "video" && (
-            <View className="absolute top-1.5 right-1.5 bg-black/40 w-6 h-6 rounded-xl justify-center items-center">
-              <Ionicons name="play" size={14} color="#fff" />
+            <View className="absolute top-1.5 right-1.5 bg-black/40 w-6 h-6 rounded-full justify-center items-center">
+              <Play size={12} color="#fff" fill="#fff" />
             </View>
           )}
         </TouchableOpacity>

@@ -52,7 +52,7 @@ export const socketService = {
   getSocket() {
     return socket;
   },
-   
+
   onNewMessage(callback: (message: any) => void) {
     if (!socket) return () => {};
     socket.on("newMessage", callback);
@@ -61,12 +61,35 @@ export const socketService = {
     };
   },
 
-
   onMessagesMarkedAsSeen(callback: (data: any) => void) {
     if (!socket) return () => {};
     socket.on("messagesMarkedAsSeen", callback);
     return () => {
       socket?.off("messagesMarkedAsSeen", callback);
+    };
+  },
+
+  onMessageEdited(callback: (message: any) => void) {
+    if (!socket) return () => {};
+    socket.on("messageEdited", callback);
+    return () => {
+      socket?.off("messageEdited", callback);
+    };
+  },
+
+  onMessageDeleted(callback: (data: any) => void) {
+    if (!socket) return () => {};
+    socket.on("messageDeleted", callback);
+    return () => {
+      socket?.off("messageDeleted", callback);
+    };
+  },
+
+  onTypingStatus(callback: (data: { conversationId: string; userId: string; isTyping: boolean }) => void) {
+    if (!socket) return () => {};
+    socket.on("typingStatus", callback);
+    return () => {
+      socket?.off("typingStatus", callback);
     };
   },
 
@@ -78,10 +101,27 @@ export const socketService = {
     };
   },
 
-
   emitSendMessage(message: any) {
     if (socket && socket.connected) {
       socket.emit("sendMessage", message);
+    }
+  },
+
+  emitEditMessage(message: any) {
+    if (socket && socket.connected) {
+      socket.emit("editMessage", message);
+    }
+  },
+
+  emitDeleteMessage(data: { messageId: string; conversationId: string; deleteForEveryone: boolean; deletedMessage?: any }) {
+    if (socket && socket.connected) {
+      socket.emit("deleteMessage", data);
+    }
+  },
+
+  emitTyping(data: { conversationId: string; userId: string; isTyping: boolean }) {
+    if (socket && socket.connected) {
+      socket.emit("typing", data);
     }
   },
 

@@ -1,279 +1,260 @@
-import * as React from 'react'
+import React from 'react';
 import {
   Text,
-  TextInput,
   TouchableOpacity,
   View,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  ActivityIndicator,
-} from 'react-native'
-import { useSignUp, useOAuth, useUser } from '@clerk/clerk-expo'
-import { Link, useRouter } from 'expo-router'
-import { Ionicons } from '@expo/vector-icons'
-import * as WebBrowser from 'expo-web-browser'
-import * as Linking from 'expo-linking'
-import { useWarmUpBrowser } from '../../hooks/useWarmUpBrowser'
+  ImageBackground,
+} from 'react-native';
+import { useSignUp, useOAuth, useUser } from '@clerk/clerk-expo';
+import { Link, useRouter } from 'expo-router';
+import { Send, AlertCircle, KeyRound, User as UserIcon, Mail, Lock } from 'lucide-react-native';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
+import { useWarmUpBrowser } from '../../hooks/useWarmUpBrowser';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
+import { COLORS } from '@/lib/theme';
 
-WebBrowser.maybeCompleteAuthSession()
+WebBrowser.maybeCompleteAuthSession();
 
 export default function SignUpScreen() {
-  useWarmUpBrowser()
-  const { isLoaded, signUp, setActive } = useSignUp()
-  const { isSignedIn } = useUser()
-  const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' })
-  const router = useRouter()
+  useWarmUpBrowser();
+  const { isLoaded, signUp, setActive } = useSignUp();
+  const { isSignedIn } = useUser();
+  const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' });
+  const router = useRouter();
 
-  const [emailAddress, setEmailAddress] = React.useState('')
-  const [username, setUsername] = React.useState('')
-  const [password, setPassword] = React.useState('')
-  const [pendingVerification, setPendingVerification] = React.useState(false)
-  const [code, setCode] = React.useState('')
-  const [loading, setLoading] = React.useState(false)
-  const [error, setError] = React.useState('')
+  const [emailAddress, setEmailAddress] = React.useState('');
+  const [username, setUsername] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [pendingVerification, setPendingVerification] = React.useState(false);
+  const [code, setCode] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState('');
 
-  // Handle submission of sign-up form
   const onSignUpPress = async () => {
-    if (!isLoaded) return
-    setLoading(true)
-    setError('')
+    if (!isLoaded) return;
+    setLoading(true);
+    setError('');
 
     try {
       await signUp.create({
         emailAddress,
         username,
         password,
-      })
+      });
 
-      await signUp.prepareEmailAddressVerification({ strategy: 'email_code' })
-      setPendingVerification(true)
+      await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+      setPendingVerification(true);
     } catch (err: any) {
-      console.error(JSON.stringify(err, null, 2))
-      setError(err.errors?.[0]?.message || 'An error occurred during sign up.')
+      console.error(JSON.stringify(err, null, 2));
+      setError(err.errors?.[0]?.message || 'An error occurred during sign up.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  // Handle submission of verification form
   const onVerifyPress = async () => {
-    if (!isLoaded) return
-    setLoading(true)
-    setError('')
+    if (!isLoaded) return;
+    setLoading(true);
+    setError('');
 
     try {
       const signUpAttempt = await signUp.attemptEmailAddressVerification({
         code,
-      })
+      });
 
       if (signUpAttempt.status === 'complete') {
-        await setActive({ session: signUpAttempt.createdSessionId })
-        router.replace('/')
+        await setActive({ session: signUpAttempt.createdSessionId });
+        router.replace('/');
       } else {
-        console.error(JSON.stringify(signUpAttempt, null, 2))
-        setError('Verification incomplete. Please check the code.')
+        console.error(JSON.stringify(signUpAttempt, null, 2));
+        setError('Verification incomplete. Please check the code.');
       }
     } catch (err: any) {
-      console.error(JSON.stringify(err, null, 2))
-      setError(err.errors?.[0]?.message || 'An error occurred during verification.')
+      console.error(JSON.stringify(err, null, 2));
+      setError(err.errors?.[0]?.message || 'An error occurred during verification.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const onGoogleSignUpPress = React.useCallback(async () => {
     if (isSignedIn) {
-      router.replace('/')
-      return
+      router.replace('/');
+      return;
     }
     try {
       const { createdSessionId, setActive } = await startOAuthFlow({
         redirectUrl: Linking.createURL('/', { scheme: 'travo' }),
-      })
+      });
 
       if (createdSessionId) {
-        await setActive!({ session: createdSessionId })
-        router.replace('/')
-      } else {
-        // Use signIn or signUp for next steps such as MFA
+        await setActive!({ session: createdSessionId });
+        router.replace('/');
       }
     } catch (err: any) {
-      const message = typeof err?.message === 'string' ? err.message : ''
+      const message = typeof err?.message === 'string' ? err.message : '';
       if (message.toLowerCase().includes('already signed in')) {
-        router.replace('/')
-        return
+        router.replace('/');
+        return;
       }
-      console.error('OAuth error', err)
-      setError('Failed to sign up with Google.')
+      console.error('OAuth error', err);
+      setError('Failed to sign up with Google.');
     }
-  }, [isSignedIn, router, startOAuthFlow])
+  }, [isSignedIn, router, startOAuthFlow]);
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-slate-50"
+      className="flex-1 bg-background"
     >
-      <ScrollView contentContainerClassName="flex-grow justify-center px-6 py-10">
-        <View className="items-center mb-10">
-          <View className="h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50 mb-4">
-            <Ionicons name="airplane" size={40} color="#6366f1" />
-          </View>
-          <Text className="text-3xl font-extrabold text-slate-900">Travo</Text>
-          <Text className="mt-2 text-center text-base text-slate-500">
-            {pendingVerification
-              ? 'Verify your email'
-              : 'Create an account to start your journey.'}
-          </Text>
-        </View>
-
-        <View className="rounded-3xl bg-white p-6 shadow-lg">
-          {error ? (
-            <View className="mb-4 flex-row items-start rounded-xl bg-red-50 p-3">
-              <View className="mr-2 mt-0.5">
-                <Ionicons name="alert-circle" size={20} color="#ef4444" />
-              </View>
-              <Text className="text-sm text-red-700 flex-1">{error}</Text>
+      <ImageBackground
+        source={require('@/assets/textures/paper-texture.png')}
+        imageStyle={{ opacity: 0.05 }}
+        className="flex-1"
+      >
+        <ScrollView contentContainerClassName="flex-grow justify-center px-6 py-10">
+          <View className="items-center mb-8">
+            <View className="h-16 w-16 items-center justify-center rounded-radius-lg bg-primary/10 mb-4 border border-primary/20">
+              <Send size={32} color={COLORS.primary} />
             </View>
-          ) : null}
+            <Text className="text-display-xl font-display text-foreground text-center">
+              Travo
+            </Text>
+            <Text className="mt-2 text-center text-body-md text-muted-foreground font-body">
+              {pendingVerification
+                ? 'Verify your email to continue'
+                : 'Create an account to start your journey.'}
+            </Text>
+          </View>
 
-          {pendingVerification ? (
-            <>
-              <View className="mb-4 flex-row items-center rounded-xl bg-slate-100 px-4">
-                <View className="mr-3">
-                  <Ionicons name="key-outline" size={20} color="#94a3b8" />
-                </View>
-                <TextInput
-                  value={code}
-                  placeholder="Verification code"
-                  placeholderTextColor="#94a3b8"
-                  onChangeText={(code) => setCode(code)}
-                  className="flex-1 h-12 text-base text-slate-900"
-                  keyboardType="number-pad"
-                />
+          <Card className="p-6">
+            {error ? (
+              <View className="mb-4 flex-row items-start rounded-radius-md bg-destructive/10 p-3 border border-destructive/20">
+                <AlertCircle size={18} color={COLORS.destructive} className="mr-2 mt-0.5" />
+                <Text className="text-body-sm text-destructive font-body flex-1">{error}</Text>
               </View>
+            ) : null}
 
-              <TouchableOpacity
-                onPress={onVerifyPress}
-                className={`mt-2 h-12 items-center justify-center rounded-xl ${
-                  loading ? 'bg-indigo-300' : 'bg-indigo-500'
-                }`}
-                disabled={loading}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text className="text-base font-semibold text-white">
+            {pendingVerification ? (
+              <>
+                <View className="mb-6">
+                  <Input
+                    label="Verification Code"
+                    value={code}
+                    placeholder="Enter 6-digit code"
+                    onChangeText={setCode}
+                    keyboardType="number-pad"
+                  />
+                </View>
+
+                <Button
+                  onPress={onVerifyPress}
+                  loading={loading}
+                  variant="default"
+                  size="lg"
+                  className="w-full"
+                >
+                  <Text className="text-body-md font-semibold text-white font-body">
                     Verify Email
                   </Text>
-                )}
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                onPress={() => setPendingVerification(false)}
-                className="mt-4 items-center"
-              >
-                <Text className="text-sm font-medium text-slate-500">
-                  Back to Sign Up
-                </Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            <>
-              <View className="mb-4 flex-row items-center rounded-xl bg-slate-100 px-4">
-                <View className="mr-3">
-                  <Ionicons name="person-outline" size={20} color="#94a3b8" />
-                </View>
-                <TextInput
-                  autoCapitalize="none"
-                  value={username}
-                  placeholder="Username"
-                  placeholderTextColor="#94a3b8"
-                  onChangeText={(val) => setUsername(val)}
-                  className="flex-1 h-12 text-base text-slate-900"
-                />
-              </View>
+                </Button>
 
-              <View className="mb-4 flex-row items-center rounded-xl bg-slate-100 px-4">
-                <View className="mr-3">
-                  <Ionicons name="mail-outline" size={20} color="#94a3b8" />
+                <TouchableOpacity
+                  onPress={() => setPendingVerification(false)}
+                  className="mt-4 items-center"
+                >
+                  <Text className="text-body-sm font-medium text-muted-foreground font-body">
+                    Back to Sign Up
+                  </Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <View className="mb-4">
+                  <Input
+                    label="Username"
+                    autoCapitalize="none"
+                    value={username}
+                    placeholder="Choose a username"
+                    onChangeText={setUsername}
+                  />
                 </View>
-                <TextInput
-                  autoCapitalize="none"
-                  value={emailAddress}
-                  placeholder="Email address"
-                  placeholderTextColor="#94a3b8"
-                  onChangeText={(email) => setEmailAddress(email)}
-                  className="flex-1 h-12 text-base text-slate-900"
-                />
-              </View>
 
-              <View className="mb-4 flex-row items-center rounded-xl bg-slate-100 px-4">
-                <View className="mr-3">
-                  <Ionicons name="lock-closed-outline" size={20} color="#94a3b8" />
+                <View className="mb-4">
+                  <Input
+                    label="Email address"
+                    autoCapitalize="none"
+                    value={emailAddress}
+                    placeholder="Enter your email"
+                    onChangeText={setEmailAddress}
+                    keyboardType="email-address"
+                  />
                 </View>
-                <TextInput
-                  value={password}
-                  placeholder="Password"
-                  placeholderTextColor="#94a3b8"
-                  secureTextEntry={true}
-                  onChangeText={(password) => setPassword(password)}
-                  className="flex-1 h-12 text-base text-slate-900"
-                />
-              </View>
 
-              <TouchableOpacity
-                onPress={onSignUpPress}
-                className={`mt-2 h-12 items-center justify-center rounded-xl ${
-                  loading ? 'bg-indigo-300' : 'bg-indigo-500'
-                }`}
-                disabled={loading}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text className="text-base font-semibold text-white">
+                <View className="mb-6">
+                  <Input
+                    label="Password"
+                    value={password}
+                    placeholder="Create a password"
+                    secureTextEntry
+                    onChangeText={setPassword}
+                  />
+                </View>
+
+                <Button
+                  onPress={onSignUpPress}
+                  loading={loading}
+                  variant="default"
+                  size="lg"
+                  className="w-full"
+                >
+                  <Text className="text-body-md font-semibold text-white font-body">
                     Create Account
                   </Text>
-                )}
-              </TouchableOpacity>
+                </Button>
 
-              <View className="my-5 flex-row items-center">
-                <View className="h-px flex-1 bg-slate-200" />
-                <Text className="mx-2 text-xs font-medium text-slate-400">
-                  OR
-                </Text>
-                <View className="h-px flex-1 bg-slate-200" />
-              </View>
-
-              <TouchableOpacity
-                onPress={onGoogleSignUpPress}
-                className="h-12 flex-row items-center justify-center rounded-xl border border-slate-200 bg-white"
-              >
-                <View className="mr-2">
-                  <Ionicons name="logo-google" size={20} color="#1e293b" />
+                <View className="my-5 flex-row items-center">
+                  <View className="h-px flex-1 bg-border" />
+                  <Text className="mx-3 text-body-sm font-medium text-muted-foreground font-body">
+                    OR
+                  </Text>
+                  <View className="h-px flex-1 bg-border" />
                 </View>
-                <Text className="text-base font-semibold text-slate-800">
-                  Continue with Google
-                </Text>
-              </TouchableOpacity>
 
-              <View className="mt-6 flex-row items-center justify-center">
-                <Text className="text-sm text-slate-500">
-                  Already have an account?
-                </Text>
-                <Link href="/sign-in" asChild>
-                  <TouchableOpacity>
-                    <Text className="ml-2 text-sm font-semibold text-indigo-500">
-                      Sign in
-                    </Text>
-                  </TouchableOpacity>
-                </Link>
-              </View>
-            </>
-          )}
-        </View>
-      </ScrollView>
+                <Button
+                  onPress={onGoogleSignUpPress}
+                  variant="secondary"
+                  size="lg"
+                  className="w-full"
+                >
+                  <Text className="text-body-md font-semibold text-primary font-body">
+                    Continue with Google
+                  </Text>
+                </Button>
+
+                <View className="mt-6 flex-row items-center justify-center">
+                  <Text className="text-body-sm text-muted-foreground font-body">
+                    Already have an account?
+                  </Text>
+                  <Link href="/sign-in" asChild>
+                    <TouchableOpacity>
+                      <Text className="ml-2 text-body-sm font-semibold text-primary font-body">
+                        Sign in
+                      </Text>
+                    </TouchableOpacity>
+                  </Link>
+                </View>
+              </>
+            )}
+          </Card>
+        </ScrollView>
+      </ImageBackground>
     </KeyboardAvoidingView>
-  )
+  );
 }

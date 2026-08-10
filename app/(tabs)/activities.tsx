@@ -3,8 +3,9 @@ import ActivityDetailsModal from "@/components/ActivityDetailsModal";
 import CreateActivityModal from "@/components/CreateActivityModal";
 import { useMapContext } from "@/context/MapContext";
 import { database, type Activity } from "@/services/database";
+import { COLORS } from "@/lib/theme";
 import { useUser } from "@clerk/clerk-expo";
-import { Ionicons } from "@expo/vector-icons";
+import { MapPin, PlusCircle, Users, ChevronRight } from "lucide-react-native";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
@@ -14,6 +15,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  ImageBackground,
 } from "react-native";
 
 type Tab = "nearby" | "my_activities" | "joined";
@@ -118,17 +120,17 @@ const ActivitiesScreen = () => {
   );
 
   const displayActivities = useMemo(() => {
-  switch (activeTab) {
-     case "nearby":
-       return nearbyActivities;
-     case "my_activities":
-       return myActivities;
-     case "joined":
-       return joinedActivities;
-     default:
-       return [];
-   }
- }, [activeTab, nearbyActivities, myActivities, joinedActivities]);
+    switch (activeTab) {
+      case "nearby":
+        return nearbyActivities;
+      case "my_activities":
+        return myActivities;
+      case "joined":
+        return joinedActivities;
+      default:
+        return [];
+    }
+  }, [activeTab, nearbyActivities, myActivities, joinedActivities]);
 
   const calculateDistance = (activity: Activity) => {
     if (!userLocation) return undefined;
@@ -199,29 +201,29 @@ const ActivitiesScreen = () => {
 
   const renderEmptyState = () => {
     let message = "";
-    let icon: keyof typeof Ionicons.glyphMap = "location-outline";
+    let IconComponent = MapPin;
 
     switch (activeTab) {
       case "nearby":
         message = userLocation
           ? "No activities nearby. Be the first to create one!"
           : "Enable location to see nearby activities";
-        icon = "location-outline";
+        IconComponent = MapPin;
         break;
       case "my_activities":
         message = "You haven't created any activities yet";
-        icon = "add-circle-outline";
+        IconComponent = PlusCircle;
         break;
       case "joined":
         message = "You haven't joined any activities yet";
-        icon = "people-outline";
+        IconComponent = Users;
         break;
     }
 
     return (
-      <View className="flex-1 items-center justify-center px-8 py-12">
-        <Ionicons name={icon} size={64} color="#cbd5e1" />
-        <Text className="text-center text-slate-500 mt-4 text-base">
+      <View className="flex-1 items-center justify-center px-8 py-16">
+        <IconComponent size={56} color={COLORS.textSecondary} opacity={0.5} />
+        <Text className="text-center text-muted-foreground mt-4 text-body-md font-body">
           {message}
         </Text>
       </View>
@@ -229,117 +231,128 @@ const ActivitiesScreen = () => {
   };
 
   return (
-    <View className="flex-1 bg-slate-50">
-      {/* Header */}
-      <View className="bg-white border-b border-slate-200 pt-12 pb-4 px-4">
-        <Text className="text-2xl font-bold text-slate-900 mb-4">
-          Activities
-        </Text>
+    <View className="flex-1 bg-background">
+      <ImageBackground
+        source={require("@/assets/textures/paper-texture.png")}
+        imageStyle={{ opacity: 0.05 }}
+        className="flex-1"
+      >
+        {/* Header */}
+        <View className="bg-surface border-b border-border pt-12 pb-4 px-4 shadow-elevation-1">
+          <Text className="text-heading-xl font-display text-foreground mb-4">
+            Activities
+          </Text>
 
-        {/* Tabs */}
-        <View className="flex-row gap-2">
-          <TouchableOpacity
-            onPress={() => setActiveTab("nearby")}
-            className={`flex-1 py-2 rounded-lg ${
-              activeTab === "nearby" ? "bg-indigo-600" : "bg-slate-100"
-            }`}
-          >
-            <Text
-              className={`text-center font-semibold text-sm ${
-                activeTab === "nearby" ? "text-white" : "text-slate-600"
+          {/* Tabs */}
+          <View className="flex-row gap-2 bg-surface-elevated p-1 rounded-radius-md border border-border">
+            <TouchableOpacity
+              onPress={() => setActiveTab("nearby")}
+              className={`flex-1 py-2 rounded-radius-md ${
+                activeTab === "nearby" ? "bg-primary shadow-sm" : ""
               }`}
             >
-              Nearby
-            </Text>
-          </TouchableOpacity>
+              <Text
+                className={`text-center font-semibold text-body-sm font-body ${
+                  activeTab === "nearby" ? "text-white" : "text-muted-foreground"
+                }`}
+              >
+                Nearby
+              </Text>
+            </TouchableOpacity>
 
+            <TouchableOpacity
+              onPress={() => setActiveTab("my_activities")}
+              className={`flex-1 py-2 rounded-radius-md ${
+                activeTab === "my_activities" ? "bg-primary shadow-sm" : ""
+              }`}
+            >
+              <Text
+                className={`text-center font-semibold text-body-sm font-body ${
+                  activeTab === "my_activities" ? "text-white" : "text-muted-foreground"
+                }`}
+              >
+                My Activities
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => setActiveTab("joined")}
+              className={`flex-1 py-2 rounded-radius-md ${
+                activeTab === "joined" ? "bg-primary shadow-sm" : ""
+              }`}
+            >
+              <Text
+                className={`text-center font-semibold text-body-sm font-body ${
+                  activeTab === "joined" ? "text-white" : "text-muted-foreground"
+                }`}
+              >
+                Joined
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Notifications / Pending Requests Banner */}
+        {pendingRequests.length > 0 && (
           <TouchableOpacity
             onPress={() => setActiveTab("my_activities")}
-            className={`flex-1 py-2 rounded-lg ${
-              activeTab === "my_activities" ? "bg-indigo-600" : "bg-slate-100"
-            }`}
+            className="bg-primary/10 mx-4 mt-4 p-4 rounded-radius-lg flex-row items-center border border-primary/20"
           >
-            <Text
-              className={`text-center font-semibold text-sm ${
-                activeTab === "my_activities" ? "text-white" : "text-slate-600"
-              }`}
-            >
-              My Activities
-            </Text>
+            <View className="bg-primary p-2.5 rounded-full">
+              <Users size={18} color="white" />
+            </View>
+            <View className="ml-3 flex-1">
+              <Text className="text-foreground font-bold font-body text-body-md">
+                Join Requests Pending
+              </Text>
+              <Text className="text-muted-foreground text-body-sm font-body">
+                {pendingRequests.length} user(s) are trying to join your activities.
+              </Text>
+            </View>
+            <ChevronRight size={20} color={COLORS.primary} />
           </TouchableOpacity>
+        )}
 
-          <TouchableOpacity
-            onPress={() => setActiveTab("joined")}
-            className={`flex-1 py-2 rounded-lg ${
-              activeTab === "joined" ? "bg-indigo-600" : "bg-slate-100"
-            }`}
-          >
-            <Text
-              className={`text-center font-semibold text-sm ${
-                activeTab === "joined" ? "text-white" : "text-slate-600"
-              }`}
-            >
-              Joined
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+        {/* Activities List */}
+        <FlatList
+          data={displayActivities}
+          renderItem={renderActivity}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={{ padding: 16 }}
+          ListEmptyComponent={renderEmptyState}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={COLORS.primary}
+            />
+          }
+        />
 
-      {/* Notifications / Pending Requests Banner */}
-      {pendingRequests.length > 0 && (
-        <TouchableOpacity
-          onPress={() => setActiveTab("my_activities")}
-          className="bg-indigo-50 mx-4 mt-4 p-4 rounded-2xl flex-row items-center border border-indigo-100"
-        >
-          <View className="bg-indigo-600 p-2 rounded-full">
-            <Ionicons name="people" size={20} color="white" />
-          </View>
-          <View className="ml-3 flex-1">
-            <Text className="text-indigo-900 font-bold">
-              Join Requests Pending
-            </Text>
-            <Text className="text-indigo-700 text-xs">
-              {pendingRequests.length} user(s) are trying to join your
-              activities.
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color="#4f46e5" />
-        </TouchableOpacity>
-      )}
+        <ActivityDetailsModal
+          activity={selectedActivity}
+          visible={!!selectedActivity}
+          onClose={() => {
+            setSelectedActivity(null);
+            onRefresh();
+          }}
+        />
 
-      {/* Activities List */}
-      <FlatList
-        data={displayActivities}
-        renderItem={renderActivity}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={{ padding: 16 }}
-        ListEmptyComponent={renderEmptyState}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      />
-      <ActivityDetailsModal
-        activity={selectedActivity}
-        visible={!!selectedActivity}
-        onClose={() => {
-          setSelectedActivity(null);
-          onRefresh();
-        }}
-      />
-      <CreateActivityModal
-        visible={isEditModalVisible}
-        onClose={() => {
-          setIsEditModalVisible(false);
-          setEditingActivity(null);
-        }}
-        initialData={editingActivity || undefined}
-        onActivityUpdated={async () => {
-          setIsEditModalVisible(false);
-          setEditingActivity(null);
-          await fetchUserActivities();
-          await fetchNearbyActivities({ forceImmediate: true });
-        }}
-      />
+        <CreateActivityModal
+          visible={isEditModalVisible}
+          onClose={() => {
+            setIsEditModalVisible(false);
+            setEditingActivity(null);
+          }}
+          initialData={editingActivity || undefined}
+          onActivityUpdated={async () => {
+            setIsEditModalVisible(false);
+            setEditingActivity(null);
+            await fetchUserActivities();
+            await fetchNearbyActivities({ forceImmediate: true });
+          }}
+        />
+      </ImageBackground>
     </View>
   );
 };

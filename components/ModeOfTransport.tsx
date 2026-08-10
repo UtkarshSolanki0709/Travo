@@ -1,6 +1,7 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Car, Bus, Bike, Footprints } from "lucide-react-native";
 import { useMemo } from "react";
 import { Text, View } from "react-native";
+import { COLORS } from "@/lib/theme";
 
 interface ModeOfTransportProps {
   distanceKm: number; // in kilometers
@@ -16,15 +17,10 @@ const formatDuration = (minutes: number) => {
   return `${hours} h ${mins > 0 ? `${mins} min` : ""}`.trim();
 };
 
-// Helper to determine if it's peak traffic time
 const isPeakHour = (date: Date = new Date()) => {
   const hour = date.getHours();
   const day = date.getDay();
-
-  // Weekend (0 = Sunday, 6 = Saturday)
   if (day === 0 || day === 6) return false;
-
-  // Weekday peak hours: 7-9 AM and 5-7 PM
   return (hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19);
 };
 
@@ -37,125 +33,87 @@ export default function ModeOfTransport({
     const currentTime = timeOfDay || new Date();
     const isRushHour = isPeakHour(currentTime);
 
-    // ==================
-    // CAR/DRIVE
-    // ==================
-    // GeoApify with traffic=approximated gives good baseline
     let carDuration = driveDurationMin;
-
-    // Add traffic multiplier during peak hours
     if (isRushHour) {
-      carDuration *= 1.3; // 30% slower in rush hour
+      carDuration *= 1.3;
     } else {
-      carDuration *= 1.1; // 10% buffer for normal traffic
+      carDuration *= 1.1;
     }
-
-    // Add parking time for destinations
     if (distanceKm > 2) {
-      carDuration += 5; // 5 min parking time
+      carDuration += 5;
     }
 
-    // ==================
-    // TRANSIT
-    // ==================
-    // Transit calculation: walking to/from stops + waiting + ride time
     let transitDuration;
-
     if (distanceKm < 1.5) {
-      // Too short for transit to make sense - walking is probably faster
       transitDuration = driveDurationMin * 2.5;
     } else if (distanceKm < 5) {
-      // Short transit: single bus/train likely
-      transitDuration = driveDurationMin * 1.8 + 12; // wait time + walk to/from stops
+      transitDuration = driveDurationMin * 1.8 + 12;
     } else if (distanceKm < 15) {
-      // Medium distance: might need transfer
       transitDuration = driveDurationMin * 1.6 + 15;
     } else {
-      // Long distance: express routes more efficient
       transitDuration = driveDurationMin * 1.4 + 18;
     }
-
-    // Peak hours: more frequent service but more crowded
     if (isRushHour) {
-      transitDuration *= 0.95; // slightly faster due to frequency
+      transitDuration *= 0.95;
     }
 
-    // ==================
-    // BIKE
-    // ==================
-    // Average cycling speeds vary by distance and terrain
     let bikeSpeed;
-
     if (distanceKm < 2) {
-      bikeSpeed = 12; // Urban, lots of stops, traffic lights
+      bikeSpeed = 12;
     } else if (distanceKm < 8) {
-      bikeSpeed = 16; // Steady urban cycling
+      bikeSpeed = 16;
     } else if (distanceKm < 15) {
-      bikeSpeed = 18; // Sustained pace, fewer stops
+      bikeSpeed = 18;
     } else {
-      bikeSpeed = 17; // Long distance, fatigue factor
+      bikeSpeed = 17;
     }
-
-    let bikeDuration = (distanceKm / bikeSpeed) * 60;
-
-    // Add time for bike parking/locking
-    bikeDuration += 2;
-
-    // Traffic affects cyclists too (more stops at lights)
+    let bikeDuration = (distanceKm / bikeSpeed) * 60 + 2;
     if (isRushHour && distanceKm < 10) {
       bikeDuration *= 1.1;
     }
 
-    // ==================
-    // WALK
-    // ==================
-    // Walking pace varies by distance and urban density
     let walkSpeed;
-
     if (distanceKm < 0.5) {
-      walkSpeed = 4.0; // Short walk, more crossings
+      walkSpeed = 4.0;
     } else if (distanceKm < 2) {
-      walkSpeed = 4.5; // Typical urban walking
+      walkSpeed = 4.5;
     } else if (distanceKm < 5) {
-      walkSpeed = 5.0; // Sustained walking pace
+      walkSpeed = 5.0;
     } else {
-      walkSpeed = 4.8; // Long walk, fatigue factor
+      walkSpeed = 4.8;
     }
-
     let walkDuration = (distanceKm / walkSpeed) * 60;
-
-    // Add crossing time for longer walks (traffic lights)
-    const numberOfCrossings = Math.floor(distanceKm * 4); // ~4 crossings per km
-    walkDuration += numberOfCrossings * 0.5; // 30 sec avg per crossing
+    const numberOfCrossings = Math.floor(distanceKm * 4);
+    walkDuration += numberOfCrossings * 0.5;
 
     return [
       {
         id: "car",
-        icon: "car-outline" as const,
+        Icon: Car,
         label: "Drive",
         duration: carDuration,
         iconColor: "#3b82f6",
       },
       {
         id: "transit",
-        icon: "bus-outline" as const,
+        Icon: Bus,
         label: "Transit",
         duration: transitDuration,
         iconColor: "#10b981",
       },
       {
         id: "bike",
-        icon: "bicycle-outline" as const,
+        Icon: Bike,
         label: "Bike",
         duration: bikeDuration,
         iconColor: "#f97316",
       },
       {
         id: "walk",
-        icon: "walk-outline" as const,
+        Icon: Footprints,
         label: "Walk",
         duration: walkDuration,
-        iconColor: "#64748b",
+        iconColor: COLORS.textSecondary,
       },
     ];
   }, [distanceKm, driveDurationMin, timeOfDay]);
@@ -169,17 +127,17 @@ export default function ModeOfTransport({
     return null;
 
   return (
-    <View className="flex-row justify-between w-full mt-4 bg-slate-50 p-3 rounded-2xl border border-slate-100">
-      {modes.map((mode) => (
-        <View key={mode.id} className="items-center justify-center flex-1">
-          <View className="bg-white p-2 rounded-full shadow-sm mb-1">
-            <Ionicons name={mode.icon} size={20} color={mode.iconColor} />
+    <View className="flex-row justify-between w-full mt-4 bg-surface-elevated p-3 rounded-radius-md border border-border">
+      {modes.map(({ id, Icon, label, duration, iconColor }) => (
+        <View key={id} className="items-center justify-center flex-1">
+          <View className="bg-surface p-2 rounded-full shadow-elevation-1 mb-1 border border-border">
+            <Icon size={18} color={iconColor} />
           </View>
-          <Text className="text-xs font-bold text-slate-700">
-            {formatDuration(mode.duration)}
+          <Text className="text-body-sm font-bold text-foreground font-body">
+            {formatDuration(duration)}
           </Text>
-          <Text className="text-[10px] text-slate-400 capitalize">
-            {mode.label}
+          <Text className="text-[10px] text-muted-foreground capitalize font-body">
+            {label}
           </Text>
         </View>
       ))}

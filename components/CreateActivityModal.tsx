@@ -5,10 +5,38 @@ import {
   type ActivityVisibility,
 } from "@/services/database";
 import { useUser } from "@clerk/clerk-expo";
-import { Ionicons } from "@expo/vector-icons";
+import {
+  X,
+  MapPin,
+  Sparkles,
+  Clock,
+  Calendar,
+  ChevronRight,
+  Users,
+  UserPlus,
+  Heart,
+  ShieldCheck,
+  Lock,
+  Globe,
+  CheckCircle2,
+  Dumbbell,
+  Utensils,
+  Trophy,
+  Palette,
+  Music,
+  Plane,
+  Gamepad2,
+  BookOpen,
+  Trees,
+  Cpu,
+  MoreHorizontal,
+  User,
+} from "lucide-react-native";
+import { COLORS } from "@/lib/theme";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
+import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -37,36 +65,36 @@ interface CreateActivityModalProps {
 }
 
 const INTERESTS = [
-  { icon: "fitness", label: "Fitness" },
-  { icon: "restaurant", label: "Food" },
-  { icon: "people", label: "Social" },
-  { icon: "basketball", label: "Sports" },
-  { icon: "color-palette", label: "Arts" },
-  { icon: "musical-notes", label: "Music" },
-  { icon: "airplane", label: "Travel" },
-  { icon: "game-controller", label: "Gaming" },
-  { icon: "book", label: "Learning" },
-  { icon: "leaf", label: "Outdoor" },
-  { icon: "hardware-chip", label: "Tech" },
-  { icon: "ellipsis-horizontal", label: "Other" },
+  { icon: Dumbbell, label: "Fitness" },
+  { icon: Utensils, label: "Food" },
+  { icon: Users, label: "Social" },
+  { icon: Trophy, label: "Sports" },
+  { icon: Palette, label: "Arts" },
+  { icon: Music, label: "Music" },
+  { icon: Plane, label: "Travel" },
+  { icon: Gamepad2, label: "Gaming" },
+  { icon: BookOpen, label: "Learning" },
+  { icon: Trees, label: "Outdoor" },
+  { icon: Cpu, label: "Tech" },
+  { icon: MoreHorizontal, label: "Other" },
 ];
 
 const SIZE_OPTIONS = [
   {
     value: "duo" as ActivitySize,
-    icon: "people-outline",
+    Icon: User,
     label: "Duo",
     subtitle: "2 people",
   },
   {
     value: "trio" as ActivitySize,
-    icon: "people",
+    Icon: Users,
     label: "Trio",
     subtitle: "3 people",
   },
   {
     value: "group" as ActivitySize,
-    icon: "people-circle",
+    Icon: Users,
     label: "Group",
     subtitle: "4+ people",
   },
@@ -75,19 +103,19 @@ const SIZE_OPTIONS = [
 const VISIBILITY_OPTIONS = [
   {
     value: "public" as ActivityVisibility,
-    icon: "globe-outline",
+    Icon: Globe,
     label: "Public",
     subtitle: "Anyone can join",
   },
   {
     value: "friends" as ActivityVisibility,
-    icon: "people-outline",
+    Icon: Users,
     label: "Friends",
     subtitle: "Friends only",
   },
   {
     value: "invite_only" as ActivityVisibility,
-    icon: "lock-closed-outline",
+    Icon: Lock,
     label: "Private",
     subtitle: "Invite only",
   },
@@ -104,151 +132,140 @@ export default function CreateActivityModal({
   const { user } = useUser();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [activityType, setActivityType] = useState("");
-  const [sizeType, setSizeType] = useState<ActivitySize>("group");
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [startTime, setStartTime] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [maxParticipants, setMaxParticipants] = useState("10");
-  const [visibility, setVisibility] = useState<ActivityVisibility>(
-    initialData?.visibility || "public",
-  );
+  const [sizeType, setSizeType] = useState<ActivitySize>("group");
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+  const [visibility, setVisibility] =
+    useState<ActivityVisibility>("public");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Initialize form with initialData if editing
   useEffect(() => {
-    if (initialData && visible) {
+    if (initialData) {
       setTitle(initialData.title);
       setDescription(initialData.description || "");
-      setActivityType(initialData.activity_type || "");
-      setSizeType(initialData.size_type);
-      setSelectedInterests(initialData.interests || []);
       setStartTime(new Date(initialData.start_time));
       setMaxParticipants(initialData.max_participants.toString());
+      setSizeType(initialData.size_type);
+      setSelectedInterests(initialData.interests || []);
       setVisibility(initialData.visibility);
-    } else if (!initialData && visible) {
-      resetForm();
+    } else {
+
+      setTitle("");
+      setDescription("");
+      setStartTime(new Date(Date.now() + 3600000));
+      setMaxParticipants("10");
+      setSizeType("group");
+      setSelectedInterests([]);
+      setVisibility("public");
     }
   }, [initialData, visible]);
-
-  const toggleInterest = (interest: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSelectedInterests((prev) =>
-      prev.includes(interest)
-        ? prev.filter((i) => i !== interest)
-        : [...prev, interest],
-    );
-  };
 
   const selectionHaptic = () => {
     Haptics.selectionAsync();
   };
 
+  const toggleInterest = (label: string) => {
+    selectionHaptic();
+    if (selectedInterests.includes(label)) {
+      setSelectedInterests(selectedInterests.filter((i) => i !== label));
+    } else {
+      setSelectedInterests([...selectedInterests, label]);
+    }
+  };
+
   const handleCreate = async () => {
     if (!title.trim()) {
-      Alert.alert("Error", "Please enter a title");
+      Alert.alert("Title Required", "Please enter an activity title.");
       return;
     }
 
-    if (!initialData && !initialLocation) {
-      Alert.alert("Error", "Location is required");
+    if (!user) {
+      Alert.alert("Error", "You must be logged in to create an activity.");
       return;
     }
 
-    if (!user?.id) {
-      Alert.alert("Error", "You must be logged in");
+    const participantsNum = parseInt(maxParticipants, 10);
+    if (isNaN(participantsNum) || participantsNum < 2) {
+      Alert.alert("Invalid Capacity", "Minimum 2 participants required.");
       return;
     }
 
     setIsSubmitting(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
       if (initialData) {
         await database.updateActivity(initialData.id, {
           title: title.trim(),
           description: description.trim() || undefined,
-          activity_type: activityType.trim() || undefined,
-          size_type: sizeType,
-          interests: selectedInterests.length > 0 ? selectedInterests : [],
           start_time: startTime.toISOString(),
-          max_participants: Number.isFinite(parseInt(maxParticipants))
-            ? parseInt(maxParticipants)
-            : 10,
+          max_participants: participantsNum,
+          size_type: sizeType,
+          interests: selectedInterests,
           visibility,
         });
+
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Alert.alert("Success", "Activity updated successfully!");
-        await onActivityUpdated?.();
+        onClose();
+        if (onActivityUpdated) onActivityUpdated();
       } else {
+        if (!initialLocation) {
+          Alert.alert(
+            "Location Required",
+            "Please select a location on the map first.",
+          );
+          setIsSubmitting(false);
+          return;
+        }
+
         await database.createActivity({
           creator_id: user.id,
           title: title.trim(),
           description: description.trim() || undefined,
-          activity_type: activityType.trim() || undefined,
-          size_type: sizeType,
-          interests:
-            selectedInterests.length > 0 ? selectedInterests : undefined,
+          latitude: initialLocation.latitude,
+          longitude: initialLocation.longitude,
+          city: initialLocation.city,
           start_time: startTime.toISOString(),
-          latitude: initialLocation!.latitude,
-          longitude: initialLocation!.longitude,
-          city: initialLocation?.city,
-          max_participants: Number.isFinite(parseInt(maxParticipants))
-            ? parseInt(maxParticipants)
-            : 10,
+          max_participants: participantsNum,
+          size_type: sizeType,
+          interests: selectedInterests,
           visibility,
           status: "upcoming",
         });
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Alert.alert("Success", "Activity created successfully!");
-        await onActivityCreated?.();
-      }
 
-      resetForm();
-      onClose();
-    } catch (error) {
-      console.error("Failed to save activity:", error);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        onClose();
+        if (onActivityCreated) onActivityCreated();
+      }
+    } catch (error: any) {
+      console.error("Create/Update activity error:", error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert(
         "Error",
-        `Failed to ${initialData ? "update" : "create"} activity.`,
+        error.message || "Failed to save activity. Please try again.",
       );
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const resetForm = () => {
-    setTitle("");
-    setDescription("");
-    setActivityType("");
-    setSizeType("group");
-    setSelectedInterests([]);
-    setStartTime(new Date());
-    setMaxParticipants("10");
-    setVisibility("public");
-  };
-
-  const formatDateTime = (date: Date) => {
-    const options: Intl.DateTimeFormatOptions = {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    };
-    return date.toLocaleString("en-US", options);
-  };
-
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent={false}
+      onRequestClose={onClose}
+    >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.container}
       >
         <LinearGradient
-          colors={["#4f46e5", "#7c3aed"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
+          colors={COLORS.twilight.colors}
+          start={COLORS.twilight.start}
+          end={COLORS.twilight.end}
           style={styles.header}
         >
           <View style={styles.headerTop}>
@@ -259,7 +276,7 @@ export default function CreateActivityModal({
               }}
               style={styles.closeButton}
             >
-              <Ionicons name="close" size={24} color="white" />
+              <X size={22} color="white" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>
               {initialData ? "Edit Activity" : "New Activity"}
@@ -278,7 +295,7 @@ export default function CreateActivityModal({
           {!initialData && initialLocation && (
             <View style={styles.locationBadge}>
               <View style={styles.locationIconWrapper}>
-                <Ionicons name="location" size={18} color="white" />
+                <MapPin size={16} color="white" />
               </View>
               <View style={styles.locationTextWrapper}>
                 <Text style={styles.locationLabel}>Location Verified</Text>
@@ -300,9 +317,9 @@ export default function CreateActivityModal({
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <View
-                  style={[styles.sectionIcon, { backgroundColor: "#eef2ff" }]}
+                  style={[styles.sectionIcon, { backgroundColor: COLORS.primary + "15" }]}
                 >
-                  <Ionicons name="sparkles" size={20} color="#6366f1" />
+                  <Sparkles size={18} color={COLORS.primary} />
                 </View>
                 <Text style={styles.sectionTitle}>What{"'"}s the plan?</Text>
               </View>
@@ -320,65 +337,53 @@ export default function CreateActivityModal({
                 <TextInput
                   value={description}
                   onChangeText={setDescription}
-                  placeholder="Details..."
+                  placeholder="Add details (meeting point, what to bring, etc.)"
                   placeholderTextColor="#94a3b8"
                   multiline
+                  numberOfLines={3}
                   style={styles.descInput}
-                  maxLength={500}
+                  textAlignVertical="top"
                 />
               </View>
             </View>
 
-            {/* Category & Time */}
-            <View style={styles.row}>
-              <View style={styles.flex1}>
-                <Text style={styles.label}>Category</Text>
-                <View style={styles.simpleInput}>
-                  <TextInput
-                    value={activityType}
-                    onChangeText={setActivityType}
-                    placeholder="e.g., Sport"
-                    placeholderTextColor="#cbd5e1"
-                    style={styles.textInputBold}
-                  />
+            {/* Date & Time */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <View
+                  style={[styles.sectionIcon, { backgroundColor: COLORS.primary + "15" }]}
+                >
+                  <Clock size={18} color={COLORS.primary} />
                 </View>
+                <Text style={styles.sectionTitle}>When is it happening?</Text>
               </View>
-              <View style={styles.flex1}>
-                <Text style={styles.label}>Start Time</Text>
+
+              <View style={styles.row}>
                 <TouchableOpacity
                   onPress={() => setShowDatePicker(true)}
-                  style={styles.simpleInput}
+                  style={[styles.flex1, styles.dateBox]}
                 >
                   <View style={styles.rowBetween}>
                     <Text style={styles.textInputBold}>
-                      {startTime.getHours()}:
-                      {startTime.getMinutes().toString().padStart(2, "0")}
+                      {format(startTime, "MMM d, yyyy")}
                     </Text>
-                    <Ionicons name="time" size={18} color="#6366f1" />
+                    <Calendar size={18} color={COLORS.primary} />
+                  </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => setShowDatePicker(true)}
+                  style={[styles.flex1, styles.dateBox]}
+                >
+                  <View style={styles.rowBetween}>
+                    <Text style={styles.textInputBold}>
+                      {format(startTime, "h:mm a")}
+                    </Text>
+                    <Clock size={18} color={COLORS.primary} />
                   </View>
                 </TouchableOpacity>
               </View>
             </View>
-
-            <TouchableOpacity
-              onPress={() => setShowDatePicker(true)}
-              style={styles.dateCard}
-            >
-              <View style={styles.rowBetween}>
-                <View style={styles.rowCenter}>
-                  <View style={styles.dateIconWrapper}>
-                    <Ionicons name="calendar" size={20} color="#6366f1" />
-                  </View>
-                  <View>
-                    <Text style={styles.dateLabel}>Scheduled For</Text>
-                    <Text style={styles.dateValue}>
-                      {formatDateTime(startTime)}
-                    </Text>
-                  </View>
-                </View>
-                <Ionicons name="chevron-forward" size={18} color="#cbd5e1" />
-              </View>
-            </TouchableOpacity>
 
             {showDatePicker && (
               <DateTimePicker
@@ -397,7 +402,7 @@ export default function CreateActivityModal({
                 <View
                   style={[styles.sectionIcon, { backgroundColor: "#ecfdf5" }]}
                 >
-                  <Ionicons name="people" size={20} color="#10b981" />
+                  <Users size={20} color="#10b981" />
                 </View>
                 <Text style={styles.sectionTitle}>Capacity</Text>
               </View>
@@ -415,8 +420,7 @@ export default function CreateActivityModal({
                       sizeType === size.value && styles.sizeOptionSelected,
                     ]}
                   >
-                    <Ionicons
-                      name={size.icon as any}
+                    <size.Icon
                       size={22}
                       color={sizeType === size.value ? "#10b981" : "#94a3b8"}
                     />
@@ -442,7 +446,7 @@ export default function CreateActivityModal({
                     style={styles.capacityValue}
                   />
                 </View>
-                <Ionicons name="person-add" size={20} color="#10b981" />
+                <UserPlus size={20} color="#10b981" />
               </View>
             </View>
 
@@ -452,7 +456,7 @@ export default function CreateActivityModal({
                 <View
                   style={[styles.sectionIcon, { backgroundColor: "#fff1f2" }]}
                 >
-                  <Ionicons name="heart" size={20} color="#f43f5e" />
+                  <Heart size={20} color="#f43f5e" />
                 </View>
                 <Text style={styles.sectionTitle}>Vibe & Interests</Text>
               </View>
@@ -465,8 +469,7 @@ export default function CreateActivityModal({
                       onPress={() => toggleInterest(interest.label)}
                       style={[styles.tag, isSelected && styles.tagSelected]}
                     >
-                      <Ionicons
-                        name={interest.icon as any}
+                      <interest.icon
                         size={14}
                         color={isSelected ? "white" : "#64748b"}
                       />
@@ -490,7 +493,7 @@ export default function CreateActivityModal({
                 <View
                   style={[styles.sectionIcon, { backgroundColor: "#eff6ff" }]}
                 >
-                  <Ionicons name="shield-checkmark" size={20} color="#3b82f6" />
+                  <ShieldCheck size={20} color={COLORS.primary} />
                 </View>
                 <Text style={styles.sectionTitle}>Privacy Setting</Text>
               </View>
@@ -506,20 +509,18 @@ export default function CreateActivityModal({
                     visibility === option.value && styles.privacyBoxSelected,
                   ]}
                 >
-                  <Ionicons
-                    name={option.icon as any}
+                  <option.Icon
                     size={22}
-                    color={visibility === option.value ? "#3b82f6" : "#64748b"}
+                    color={visibility === option.value ? COLORS.primary : "#64748b"}
                   />
                   <View style={styles.privacyText}>
                     <Text style={styles.privacyLabel}>{option.label}</Text>
                     <Text style={styles.privacySub}>{option.subtitle}</Text>
                   </View>
                   {visibility === option.value && (
-                    <Ionicons
-                      name="checkmark-circle"
+                    <CheckCircle2
                       size={20}
-                      color="#3b82f6"
+                      color={COLORS.primary}
                     />
                   )}
                 </TouchableOpacity>
@@ -529,7 +530,9 @@ export default function CreateActivityModal({
             {/* Footer */}
             <TouchableOpacity onPress={handleCreate} disabled={isSubmitting}>
               <LinearGradient
-                colors={["#4f46e5", "#7c3aed"]}
+                colors={COLORS.sunrise.colors}
+                start={COLORS.sunrise.start}
+                end={COLORS.sunrise.end}
                 style={styles.launchBtn}
               >
                 <Text style={styles.launchBtnText}>
@@ -541,10 +544,6 @@ export default function CreateActivityModal({
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
-
-            <TouchableOpacity onPress={onClose} style={styles.cancelBtn}>
-              <Text style={styles.cancelBtnText}>Cancel and go back</Text>
-            </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -553,211 +552,257 @@ export default function CreateActivityModal({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "white" },
-  header: { paddingHorizontal: 20, paddingTop: 50, paddingBottom: 25 },
+  container: {
+    flex: 1,
+    backgroundColor: "#f8fafc",
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === "ios" ? 56 : 40,
+    paddingBottom: 20,
+  },
   headerTop: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 15,
+    marginBottom: 16,
   },
   closeButton: {
-    backgroundColor: "rgba(255,255,255,0.2)",
-    padding: 10,
-    borderRadius: 25,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  headerTitle: { color: "white", fontSize: 22, fontWeight: "800" },
+  headerTitle: {
+    color: "white",
+    fontSize: 20,
+    fontWeight: "700",
+    fontFamily: "Poppins_700Bold",
+  },
   createButton: {
     backgroundColor: "white",
-    paddingHorizontal: 18,
+    paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 15,
-  },
-  createButtonText: { color: "#4f46e5", fontWeight: "800" },
-  locationBadge: {
-    backgroundColor: "rgba(255,255,255,0.15)",
     borderRadius: 20,
-    padding: 12,
+  },
+  createButtonText: {
+    color: COLORS.primary,
+    fontWeight: "700",
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+  },
+  locationBadge: {
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    padding: 10,
+    borderRadius: 12,
   },
   locationIconWrapper: {
-    backgroundColor: "rgba(255,255,255,0.2)",
-    padding: 6,
-    borderRadius: 10,
-    marginRight: 12,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
   },
-  locationTextWrapper: { flex: 1 },
+  locationTextWrapper: {
+    flex: 1,
+  },
   locationLabel: {
-    color: "white",
-    opacity: 0.6,
-    fontSize: 10,
-    fontWeight: "800",
-    textTransform: "uppercase",
+    color: "rgba(255, 255, 255, 0.8)",
+    fontSize: 11,
+    fontWeight: "500",
   },
-  locationValue: { color: "white", fontSize: 13, fontWeight: "700" },
-  scroll: { flex: 1 },
-  scrollContent: { paddingBottom: 50 },
-  padding: { paddingHorizontal: 20 },
-  section: { marginTop: 30 },
+  locationValue: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 40,
+  },
+  padding: {
+    padding: 20,
+  },
+  section: {
+    marginBottom: 24,
+  },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 15,
+    marginBottom: 12,
   },
-  sectionIcon: { padding: 8, borderRadius: 12, marginRight: 12 },
-  sectionTitle: { fontSize: 18, fontWeight: "800", color: "#0f172a" },
+  sectionIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#0f172a",
+    fontFamily: "Inter_600SemiBold",
+  },
   inputCard: {
-    backgroundColor: "#f8fafc",
-    borderRadius: 24,
+    backgroundColor: "white",
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: "#e2e8f0",
     overflow: "hidden",
   },
   titleInput: {
-    paddingHorizontal: 20,
-    paddingVertical: 18,
+    padding: 16,
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "600",
     color: "#0f172a",
   },
-  divider: { height: 1, backgroundColor: "#e2e8f0", marginHorizontal: 20 },
+  divider: {
+    height: 1,
+    backgroundColor: "#e2e8f0",
+  },
   descInput: {
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-    fontSize: 15,
-    color: "#475569",
-    minHeight: 120,
-    textAlignVertical: "top",
+    padding: 16,
+    fontSize: 14,
+    color: "#334155",
+    minHeight: 80,
   },
-  row: { flexDirection: "row", gap: 12, marginTop: 20 },
-  flex1: { flex: 1 },
-  label: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: "#64748b",
-    marginBottom: 8,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
+  row: {
+    flexDirection: "row",
+    gap: 12,
   },
-  simpleInput: {
+  flex1: {
+    flex: 1,
+  },
+  dateBox: {
     backgroundColor: "white",
-    borderRadius: 20,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: "#e2e8f0",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    minHeight: 56,
-    justifyContent: "center",
+    padding: 14,
   },
-  textInputBold: { fontSize: 15, fontWeight: "700", color: "#0f172a" },
   rowBetween: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  rowCenter: { flexDirection: "row", alignItems: "center" },
-  dateCard: {
-    backgroundColor: "#f5f7ff",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#e0e7ff",
-    padding: 16,
-    marginTop: 20,
+  textInputBold: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#0f172a",
   },
-  dateIconWrapper: {
-    backgroundColor: "white",
-    padding: 8,
-    borderRadius: 10,
-    marginRight: 15,
-  },
-  dateLabel: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: "#6366f1",
-    textTransform: "uppercase",
-  },
-  dateValue: { fontSize: 15, fontWeight: "800", color: "#0f172a" },
   sizeOption: {
     flex: 1,
-    backgroundColor: "white",
-    borderRadius: 20,
+    alignItems: "center",
+    padding: 12,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: "#e2e8f0",
-    padding: 15,
-    alignItems: "center",
+    backgroundColor: "white",
   },
-  sizeOptionSelected: { backgroundColor: "#f0fdf4", borderColor: "#10b981" },
+  sizeOptionSelected: {
+    borderColor: "#10b981",
+    backgroundColor: "#f0fdf4",
+  },
   sizeLabelSmall: {
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: "600",
     color: "#64748b",
-    marginTop: 8,
+    marginTop: 4,
   },
   capacityInput: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f8fafc",
-    borderRadius: 20,
+    backgroundColor: "white",
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: "#e2e8f0",
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    marginTop: 15,
+    padding: 14,
+    marginTop: 12,
   },
   labelSmall: {
-    fontSize: 9,
-    fontWeight: "800",
-    color: "#94a3b8",
-    textTransform: "uppercase",
+    fontSize: 11,
+    color: "#64748b",
+    fontWeight: "500",
   },
   capacityValue: {
-    fontSize: 20,
-    fontWeight: "800",
+    fontSize: 16,
+    fontWeight: "700",
     color: "#0f172a",
+    padding: 0,
     marginTop: 2,
   },
-  tagContainer: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  tagContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
   tag: {
     flexDirection: "row",
     alignItems: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
     backgroundColor: "white",
-    borderRadius: 25,
     borderWidth: 1,
     borderColor: "#e2e8f0",
-    paddingHorizontal: 15,
-    paddingVertical: 8,
+    gap: 6,
   },
-  tagSelected: { backgroundColor: "#0f172a", borderColor: "#0f172a" },
-  tagText: { fontSize: 13, fontWeight: "700", color: "#475569", marginLeft: 8 },
+  tagSelected: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  tagText: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#475569",
+  },
   privacyBox: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "white",
-    borderRadius: 20,
+    padding: 14,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#f1f5f9",
-    padding: 18,
-    marginBottom: 12,
+    borderColor: "#e2e8f0",
+    backgroundColor: "white",
+    marginBottom: 8,
   },
   privacyBoxSelected: {
-    backgroundColor: "#f0f7ff",
-    borderColor: "#3b82f6",
-    borderWidth: 2,
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primary + "10",
   },
-  privacyText: { flex: 1, marginLeft: 15 },
-  privacyLabel: { fontSize: 15, fontWeight: "700", color: "#0f172a" },
-  privacySub: { fontSize: 12, color: "#64748b", marginTop: 2 },
+  privacyText: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  privacyLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#0f172a",
+  },
+  privacySub: {
+    fontSize: 12,
+    color: "#64748b",
+  },
   launchBtn: {
-    height: 64,
-    borderRadius: 20,
+    padding: 16,
+    borderRadius: 24,
     alignItems: "center",
-    justifyContent: "center",
-    marginTop: 20,
+    marginTop: 12,
   },
-  launchBtnText: { color: "white", fontSize: 18, fontWeight: "900" },
-  cancelBtn: { alignItems: "center", padding: 20 },
-  cancelBtnText: { color: "#94a3b8", fontWeight: "700", fontSize: 14 },
+  launchBtnText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "700",
+    fontFamily: "Inter_600SemiBold",
+  },
 });

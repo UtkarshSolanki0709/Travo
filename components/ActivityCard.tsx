@@ -1,7 +1,16 @@
 import type { Activity } from "@/services/database";
-import { Ionicons } from "@expo/vector-icons";
+import { Clock, MapPin, Users, Edit3, Trash2 } from "lucide-react-native";
 import { format } from "date-fns";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Text, Pressable, View } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
+import * as Haptics from "expo-haptics";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { COLORS } from "@/lib/theme";
 
 interface ActivityCardProps {
   activity: Activity;
@@ -14,6 +23,8 @@ interface ActivityCardProps {
   onDelete?: () => void;
 }
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 export default function ActivityCard({
   activity,
   onPress,
@@ -24,6 +35,8 @@ export default function ActivityCard({
   onEdit,
   onDelete,
 }: ActivityCardProps) {
+  const scale = useSharedValue(1);
+
   const startTime = new Date(activity.start_time);
   const now = new Date();
   const isUpcoming = startTime > now;
@@ -31,158 +44,157 @@ export default function ActivityCard({
     ? Math.floor((startTime.getTime() - now.getTime()) / (1000 * 60 * 60))
     : 0;
 
-  const getSizeIcon = () => {
-    switch (activity.size_type) {
-      case "duo":
-        return "people-outline";
-      case "trio":
-        return "people-outline";
-      case "group":
-        return "people-circle-outline";
-      default:
-        return "people-outline";
-    }
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withTiming(0.97, { duration: 150 });
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
-  const getStatusColor = () => {
+  const handlePressOut = () => {
+    scale.value = withTiming(1, { duration: 150 });
+  };
+
+  const getStatusVariant = (): "default" | "secondary" | "outline" | "destructive" => {
     switch (activity.status) {
       case "upcoming":
-        return {bg:"bg-blue-100",text:"text-blue-700"};
+        return "default";
       case "ongoing":
-        return {bg:"bg-green-100",text:"text-green-700"};
+        return "secondary";
       case "completed":
-        return {bg:"bg-gray-100",text:"text-gray-700"};
+        return "outline";
       case "cancelled":
-        return {bg:"bg-red-100",text:"text-red-700"};
+        return "destructive";
       default:
-        return {bg:"bg-gray-100",text:"text-gray-700"};
+        return "outline";
     }
   };
 
   return (
-    <TouchableOpacity
+    <AnimatedPressable
       onPress={onPress}
-      className="bg-white rounded-2xl p-4 mb-3 shadow-sm border border-slate-100"
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      style={[animatedStyle, { marginBottom: 12 }]}
     >
-      {/* Header */}
-      <View className="flex-row items-start justify-between mb-2">
-        <View className="flex-1 mr-2">
-          <Text className="text-lg font-bold text-slate-900" numberOfLines={1}>
-            {activity.title}
-          </Text>
-          {activity.activity_type && (
-            <Text className="text-xs text-indigo-600 font-semibold mt-1">
-              {activity.activity_type}
+      <Card className="p-4">
+        {/* Header */}
+        <View className="flex-row items-start justify-between mb-2">
+          <View className="flex-1 mr-2">
+            <Text className="text-heading-md font-heading text-foreground" numberOfLines={1}>
+              {activity.title}
             </Text>
-          )}
+            {activity.activity_type && (
+              <Text className="text-body-sm font-semibold text-primary font-body mt-0.5">
+                {activity.activity_type}
+              </Text>
+            )}
+          </View>
+          <Badge variant={getStatusVariant()}>
+            <Text className="capitalize text-body-sm font-body">{activity.status}</Text>
+          </Badge>
         </View>
-        <View className={`px-2 py-1 rounded-lg ${getStatusColor().bg}`}>
-          <Text className={`text-xs font-semibold capitalize ${getStatusColor().text}`}>
-            {activity.status}
-          </Text>
-        </View>
-      </View>
 
-      {/* Description */}
-      {activity.description && (
-        <Text className="text-sm text-slate-600 mb-3" numberOfLines={2}>
-          {activity.description}
-        </Text>
-      )}
-
-      {/* Info Row */}
-      <View className="flex-row items-center justify-between mb-3">
-        <View className="flex-row items-center">
-          <Ionicons name="time-outline" size={16} color="#64748b" />
-          <Text className="text-xs text-slate-600 ml-1">
-            {format(startTime, "MMM d, h:mm a")}
+        {/* Description */}
+        {activity.description && (
+          <Text className="text-body-md text-muted-foreground font-body mb-3" numberOfLines={2}>
+            {activity.description}
           </Text>
-        </View>
-        {distance !== undefined && (
+        )}
+
+        {/* Info Row */}
+        <View className="flex-row items-center justify-between mb-3">
           <View className="flex-row items-center">
-            <Ionicons name="location-outline" size={16} color="#64748b" />
-            <Text className="text-xs text-slate-600 ml-1">
-              {distance < 1
-                ? `${Math.round(distance * 1000)}m`
-                : `${distance.toFixed(1)}km`}
+            <Clock size={16} color={COLORS.textSecondary} />
+            <Text className="text-body-sm text-muted-foreground font-body ml-1.5">
+              {format(startTime, "MMM d, h:mm a")}
             </Text>
           </View>
-        )}
-      </View>
-
-      {/* Bottom Row */}
-      <View className="flex-row items-center justify-between">
-        <View className="flex-row items-center space-x-3">
-          <View className="flex-row items-center">
-            <Ionicons name={getSizeIcon()} size={18} color="#6366f1" />
-            <Text className="text-xs text-slate-700 ml-1 font-semibold">
-              {participantCount}/{activity.max_participants}
-            </Text>
-          </View>
-          {isUpcoming && timeUntil > 0 && (
-            <Text className="text-xs text-slate-500">in {timeUntil}h</Text>
-          )}
-        </View>
-
-        {/* Join Status Badge */}
-        {isJoined && (
-          <View className="bg-green-100 px-2 py-1 rounded-lg">
-            <Text className="text-xs font-semibold text-green-700">Joined</Text>
-          </View>
-        )}
-        {isPending && (
-          <View className="bg-yellow-100 px-2 py-1 rounded-lg">
-            <Text className="text-xs font-semibold text-yellow-700">
-              Pending
-            </Text>
-          </View>
-        )}
-      </View>
-
-      {/* Interests Tags */}
-      {activity.interests && activity.interests.length > 0 && (
-        <View className="flex-row flex-wrap mt-3 gap-2">
-          {activity.interests.slice(0, 3).map((interest) => (
-            <View key={interest} className="bg-indigo-50 px-2 py-1 rounded-lg">
-              <Text className="text-xs text-indigo-700">{interest}</Text>
-            </View>
-          ))}
-          {activity.interests.length > 3 && (
-            <View className="bg-slate-100 px-2 py-1 rounded-lg">
-              <Text className="text-xs text-slate-600">
-                +{activity.interests.length - 3}
+          {distance !== undefined && (
+            <View className="flex-row items-center">
+              <MapPin size={16} color={COLORS.textSecondary} />
+              <Text className="text-body-sm text-muted-foreground font-body ml-1.5">
+                {distance < 1
+                  ? `${Math.round(distance * 1000)}m`
+                  : `${distance.toFixed(1)}km`}
               </Text>
             </View>
           )}
         </View>
-      )}
-      {/* Admin Actions */}
-      {(onEdit || onDelete) && (
-        <View className="flex-row gap-2 mt-4 pt-4 border-t border-slate-50">
-          {onEdit && (
-            <TouchableOpacity
-              onPress={onEdit}
-              className="flex-1 flex-row items-center justify-center bg-indigo-50 py-2.5 rounded-xl border border-indigo-100"
-            >
-              <Ionicons name="create-outline" size={16} color="#4f46e5" />
-              <Text className="text-indigo-600 font-bold text-xs ml-2">
-                Update
+
+        {/* Bottom Row */}
+        <View className="flex-row items-center justify-between">
+          <View className="flex-row items-center gap-3">
+            <View className="flex-row items-center">
+              <Users size={18} color={COLORS.primary} />
+              <Text className="text-body-sm text-foreground font-semibold font-body ml-1.5">
+                {participantCount}/{activity.max_participants}
               </Text>
-            </TouchableOpacity>
+            </View>
+            {isUpcoming && timeUntil > 0 && (
+              <Text className="text-body-sm text-muted-foreground font-body">in {timeUntil}h</Text>
+            )}
+          </View>
+
+          {/* Join Status Badge */}
+          {isJoined && (
+            <Badge variant="secondary">
+              <Text className="text-body-sm font-body">Joined</Text>
+            </Badge>
           )}
-          {onDelete && (
-            <TouchableOpacity
-              onPress={onDelete}
-              className="flex-1 flex-row items-center justify-center bg-red-50 py-2.5 rounded-xl border border-red-100"
-            >
-              <Ionicons name="trash-outline" size={16} color="#ef4444" />
-              <Text className="text-red-600 font-bold text-xs ml-2">
-                Delete
-              </Text>
-            </TouchableOpacity>
+          {isPending && (
+            <Badge variant="accent">
+              <Text className="text-body-sm font-body">Pending</Text>
+            </Badge>
           )}
         </View>
-      )}
-    </TouchableOpacity>
+
+        {/* Interests Tags */}
+        {activity.interests && activity.interests.length > 0 && (
+          <View className="flex-row flex-wrap mt-3 gap-1.5">
+            {activity.interests.slice(0, 3).map((interest) => (
+              <Badge key={interest} category={interest}>
+                <Text className="text-body-sm font-body">{interest}</Text>
+              </Badge>
+            ))}
+            {activity.interests.length > 3 && (
+              <Badge variant="outline">
+                <Text className="text-body-sm font-body">+{activity.interests.length - 3}</Text>
+              </Badge>
+            )}
+          </View>
+        )}
+
+        {/* Admin Actions */}
+        {(onEdit || onDelete) && (
+          <View className="flex-row gap-2 mt-4 pt-3 border-t border-border">
+            {onEdit && (
+              <Pressable
+                onPress={onEdit}
+                className="flex-1 flex-row items-center justify-center bg-primary/10 py-2.5 rounded-radius-md border border-primary/20"
+              >
+                <Edit3 size={16} color={COLORS.primary} />
+                <Text className="text-primary font-semibold text-body-sm font-body ml-1.5">
+                  Update
+                </Text>
+              </Pressable>
+            )}
+            {onDelete && (
+              <Pressable
+                onPress={onDelete}
+                className="flex-1 flex-row items-center justify-center bg-destructive/10 py-2.5 rounded-radius-md border border-destructive/20"
+              >
+                <Trash2 size={16} color={COLORS.destructive} />
+                <Text className="text-destructive font-semibold text-body-sm font-body ml-1.5">
+                  Delete
+                </Text>
+              </Pressable>
+            )}
+          </View>
+        )}
+      </Card>
+    </AnimatedPressable>
   );
 }

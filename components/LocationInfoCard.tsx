@@ -1,6 +1,9 @@
-import { Ionicons } from "@expo/vector-icons";
-import { Text, TouchableOpacity, View } from "react-native";
+import { PlusCircle } from "lucide-react-native";
+import { Text, View } from "react-native";
 import ModeOfTransport from "./ModeOfTransport";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { COLORS } from "@/lib/theme";
 
 interface LocationInfoCardProps {
   name: string;
@@ -22,17 +25,17 @@ export default function LocationInfoCard({
   onCreateActivity,
 }: LocationInfoCardProps) {
   return (
-    <View className="absolute bottom-6 left-4 right-4 bg-white rounded-3xl p-5 shadow-2xl border border-slate-100 z-50">
+    <Card className="absolute bottom-6 left-4 right-4 p-5 shadow-elevation-3 z-50">
       <View className="flex-row items-center justify-between mb-4">
         <View className="flex-1 mr-4">
           <Text
-            className="text-xl font-bold text-slate-900 mb-1"
+            className="text-heading-lg font-heading text-foreground mb-1"
             numberOfLines={1}
           >
             {name}
           </Text>
           {address && (
-            <Text className="text-slate-500 text-sm" numberOfLines={2}>
+            <Text className="text-muted-foreground text-body-sm font-body" numberOfLines={2}>
               {address}
             </Text>
           )}
@@ -40,10 +43,10 @@ export default function LocationInfoCard({
         {(eta || distance) && (
           <View className="items-end">
             {eta && (
-              <Text className="text-indigo-600 font-bold text-lg">{eta}</Text>
+              <Text className="text-primary font-bold text-heading-md font-body">{eta}</Text>
             )}
             {distance && (
-              <Text className="text-slate-400 text-xs font-semibold">
+              <Text className="text-muted-foreground text-body-sm font-semibold font-body">
                 {distance}
               </Text>
             )}
@@ -58,15 +61,17 @@ export default function LocationInfoCard({
         />
       )}
 
-      <TouchableOpacity
+      <Button
         onPress={onCreateActivity}
-        className="mt-4 bg-indigo-600 h-14 rounded-2xl flex-row items-center justify-center shadow-lg shadow-indigo-200"
+        variant="default"
+        size="lg"
+        className="mt-4 w-full"
       >
-        <Ionicons name="add-circle-outline" size={22} color="white" />
-        <Text className="text-white font-bold text-lg ml-2">
+        <PlusCircle size={20} color="white" />
+        <Text className="text-white font-bold text-body-md font-body ml-2">
           Create a New Activity
         </Text>
-      </TouchableOpacity>
-    </View>
+      </Button>
+    </Card>
   );
 }
