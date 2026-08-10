@@ -3,8 +3,11 @@ import { tokenCache } from "@clerk/clerk-expo/token-cache";
 import { Slot, useRouter, useSegments } from "expo-router";
 import { useEffect } from "react";
 import "react-native-url-polyfill/auto";
+import "../global.css";
+import { ActivityIndicator, View } from "react-native";
 import { MapProvider } from "../context/MapContext";
 import { database } from "../services/database";
+import { PortalHost } from "@rn-primitives/portal";
 // import "../services/locationTask"; // Register background task
 
 const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -26,7 +29,7 @@ function InitialLayout() {
 
     const inAuthGroup = segments[0] === "(auth)";
 
-    if (isSignedIn && inAuthGroup) {
+    if (isSignedIn) {
       // Sync user data to Supabase
       const email = user?.emailAddresses[0]?.emailAddress;
       if (user && email) {
@@ -40,13 +43,21 @@ function InitialLayout() {
           )
           .catch((err) => console.error("Error syncing user:", err));
       }
-
-      // Removed redirection to '/' as it prevents adding additional accounts via (auth) screens
-    } else if (!isSignedIn && !inAuthGroup) {
+    }
+    
+    if (!isSignedIn && !inAuthGroup) {
       // Redirect to sign-in if not signed in and trying to access app
       router.replace("/sign-in");
     }
   }, [isSignedIn, isLoaded, segments, router, user]);
+
+  if (!isLoaded) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#6366f1" />
+      </View>
+    );
+  }
 
   return <Slot />;
 }
@@ -59,6 +70,7 @@ export default function RootLayout() {
     >
       <MapProvider>
         <InitialLayout />
+        <PortalHost />
       </MapProvider>
     </ClerkProvider>
   );

@@ -337,16 +337,52 @@ const ACTIVITY_FETCH_DISTANCE_THRESHOLD = 0.5; // 500m
     fetchActivities();
   }, [fetchActivities]);
 
-  // Refresh when tab focused
+  // Refresh when tab focused & update live location if active
   useFocusEffect(
     useCallback(() => {
       fetchActivities();
       if (clerkUser) {
-        database.getProfile(clerkUser.id).then((profile) => {
-          if (profile) interestsRef.current = profile.interests || [];
+        database.getProfile(clerkUser.id).then(async (profile) => {
+          if (profile) {
+            interestsRef.current = profile.interests || [];
+            setIsLocationEnabled(!!profile.is_live_tracking);
+
+            if (profile.is_live_tracking) {
+              try {
+                const { status } = await Location.requestForegroundPermissionsAsync();
+                if (status === "granted") {
+                  const loc = await Location.getCurrentPositionAsync({
+                    accuracy: Location.Accuracy.Balanced,
+                  });
+                  const coords = {
+                    latitude: loc.coords.latitude,
+                    longitude: loc.coords.longitude,
+                  };
+                  updateLocation(coords);
+                  mapRef.current?.animateToRegion(
+                    {
+                      ...coords,
+                      latitudeDelta: 0.05,
+                      longitudeDelta: 0.05,
+                    },
+                    800,
+                  );
+                  await startForegroundWatch(clerkUser.id);
+                  database.updateLiveLocation(
+                    clerkUser.id,
+                    coords.latitude,
+                    coords.longitude,
+                    interestsRef.current,
+                  ).catch((err) => console.error("DB update failed on focus", err));
+                }
+              } catch (err) {
+                console.error("Focus location update failed", err);
+              }
+            }
+          }
         });
       }
-    }, [fetchActivities, clerkUser]),
+    }, [fetchActivities, clerkUser, updateLocation, startForegroundWatch]),
   );
 
   const handleActivityCreated = () => {

@@ -145,11 +145,33 @@ export const database = {
     return data;
   },
 
+  async ensureUserExists(userId: string) {
+    if (!userId) return;
+    const { data } = await supabase
+      .from("users")
+      .select("id")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (!data) {
+      await supabase.from("users").upsert(
+        {
+          id: userId,
+          email: `${userId}@placeholder.com`,
+          username: `user_${userId.slice(-6)}`,
+        },
+        { onConflict: "id" },
+      );
+    }
+  },
+
   /**
    * Updates profile fields (e.g. interests, tracking status)
    */
   async updateProfile(userId: string, data: Partial<UserProfile>) {
     if (!userId) throw new Error("userId is required for updateProfile");
+
+    await this.ensureUserExists(userId);
 
     // Filter out undefined values to prevent nulling columns
     const filteredData = Object.fromEntries(
@@ -178,6 +200,8 @@ export const database = {
     interests: string[],
   ) {
     if (!userId) throw new Error("userId is required for updateLiveLocation");
+
+    await this.ensureUserExists(userId);
 
     const { error } = await supabase.from("profiles").upsert(
       {
@@ -298,6 +322,9 @@ export const database = {
    * Creates a new post
    */
   async createPost(data: Partial<Post>) {
+    if (data.author_id) {
+      await this.ensureUserExists(data.author_id);
+    }
     const id = Crypto.randomUUID();
     const { error } = await supabase.from("posts").insert({
       id,
@@ -479,6 +506,9 @@ export const database = {
    * Creates a new activity (creator becomes admin)
    */
   async createActivity(data: Omit<Activity, "id" | "created_at">) {
+    if (data.creator_id) {
+      await this.ensureUserExists(data.creator_id);
+    }
     const id = Crypto.randomUUID();
     const { error } = await supabase.from("activities").insert({
       id,
@@ -633,6 +663,9 @@ export const database = {
    * Request to join an activity (requires admin approval)
    */
   async requestToJoinActivity(activity_id: string, userId: string) {
+    if (userId) {
+      await this.ensureUserExists(userId);
+    }
     const { error } = await supabase.from("activity_participants").insert({
       activity_id,
       user_id: userId,
@@ -722,14 +755,15 @@ export const database = {
 
     if (createdError) throw createdError;
 
-    // Get joined activities
+    // Get joined activities (only activities created by other users)
     const { data: joinedData, error: joinedError } = await supabase
       .from("activity_participants")
       .select(
-        "activity:activities(*, participant_count:activity_participants(count))",
+        "activity:activities!inner(*, participant_count:activity_participants(count))",
       )
       .eq("user_id", userId)
-      .eq("status", "approved");
+      .eq("status", "approved")
+      .neq("activity.creator_id", userId);
 
     if (joinedError) throw joinedError;
 
@@ -813,15 +847,18 @@ export const database = {
    * Fetches all pending join requests for activities created by this user
    */
   async getPendingRequestsForUser(userId: string) {
+    if (!userId) return [];
     const { data, error } = await supabase
       .from("activity_participants")
-      .select("*, activity:activities(*), user:users(*)")
-      .eq("activities.creator_id", userId)
+      .select("*, activity:activities!inner(*), user:users(*)")
+      .eq("activity.creator_id", userId)
       .eq("status", "pending")
       .order("joined_at", { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return (data || []).filter(
+      (item: any) => item.activity && item.activity.creator_id === userId,
+    );
   },
 
   /**
@@ -846,5 +883,140 @@ export const database = {
       .eq("id", id);
 
     if (error) throw error;
+  },
+
+  // ==================
+  // FRIENDSHIPS & SOCIAL
+  // ==================
+
+  /**
+   * Search users by username or display name
+   */
+  async searchUsers(query: string, currentUserId: string): Promise<User[]> {
+    if (!query.trim()) return [];
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .neq("id", currentUserId)
+      .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
+      .limit(20);
+
+    if (error) throw error;
+    return data || [];
+  },
+
+  /**
+   * Send a friend request
+   */
+  async sendFriendRequest(requesterId: string, addresseeId: string) {
+    await this.ensureUserExists(requesterId);
+    await this.ensureUserExists(addresseeId);
+
+    const { error } = await supabase.from("friendships").insert({
+      requester_id: requesterId,
+      addressee_id: addresseeId,
+      status: "pending",
+    });
+
+    if (error) {
+      if (error.code === "23505") {
+        throw new Error("Friend request already exists");
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Accept a friend request and increment friends counters
+   */
+  async acceptFriendRequest(
+    friendshipId: string,
+    requesterId: string,
+    addresseeId: string,
+  ) {
+    const { error } = await supabase
+      .from("friendships")
+      .update({ status: "accepted" })
+      .eq("id", friendshipId);
+
+    if (error) throw error;
+
+    // Increment counters for both users
+    await Promise.all([
+      this.incrementFriendsCount(requesterId),
+      this.incrementFriendsCount(addresseeId),
+    ]);
+  },
+
+  /**
+   * Decline a friend request
+   */
+  async declineFriendRequest(friendshipId: string) {
+    const { error } = await supabase
+      .from("friendships")
+      .delete()
+      .eq("id", friendshipId);
+
+    if (error) throw error;
+  },
+
+  /**
+   * Get all accepted friends for a user
+   */
+  async getFriends(userId: string): Promise<User[]> {
+    const { data, error } = await supabase
+      .from("friendships")
+      .select("*, requester:users!friendships_requester_id_fkey(*), addressee:users!friendships_addressee_id_fkey(*)")
+      .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`)
+      .eq("status", "accepted");
+
+    if (error) throw error;
+
+    return (data || [])
+      .map((item: any) =>
+        item.requester_id === userId ? item.addressee : item.requester,
+      )
+      .filter(Boolean);
+  },
+
+  /**
+   * Get pending incoming friend requests for a user
+   */
+  async getPendingFriendRequests(userId: string) {
+    const { data, error } = await supabase
+      .from("friendships")
+      .select("*, requester:users!friendships_requester_id_fkey(*)")
+      .eq("addressee_id", userId)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  },
+
+  /**
+   * Get friendship status between two users
+   */
+  async getFriendshipStatus(
+    userId: string,
+    targetUserId: string,
+  ): Promise<{ status: "none" | "pending_sent" | "pending_received" | "accepted" | "blocked"; friendshipId?: string }> {
+    const { data, error } = await supabase
+      .from("friendships")
+      .select("*")
+      .or(`and(requester_id.eq.${userId},addressee_id.eq.${targetUserId}),and(requester_id.eq.${targetUserId},addressee_id.eq.${userId})`)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) return { status: "none" };
+
+    if (data.status === "accepted") return { status: "accepted", friendshipId: data.id };
+    if (data.status === "blocked") return { status: "blocked", friendshipId: data.id };
+
+    if (data.requester_id === userId) {
+      return { status: "pending_sent", friendshipId: data.id };
+    } else {
+      return { status: "pending_received", friendshipId: data.id };
+    }
   },
 };
