@@ -20,6 +20,7 @@ import { ActivityIndicator, View } from "react-native";
 import { MapProvider } from "../context/MapContext";
 import { database } from "../services/database";
 import { PortalHost } from "@rn-primitives/portal";
+import { KeyboardProvider } from "react-native-keyboard-controller";
 import { NAV_THEME, COLORS } from "../lib/theme";
 // import "../services/locationTask"; // Register background task
 
@@ -104,10 +105,12 @@ export default function RootLayout() {
           publishableKey={CLERK_PUBLISHABLE_KEY || ""}
           tokenCache={tokenCache}
         >
-          <MapProvider>
-            <InitialLayout />
-            <PortalHost />
-          </MapProvider>
+          <KeyboardProvider>
+            <MapProvider>
+              <InitialLayout />
+              <PortalHost />
+            </MapProvider>
+          </KeyboardProvider>
         </ClerkProvider>
       </ThemeProvider>
     </View>

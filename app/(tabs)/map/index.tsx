@@ -7,7 +7,7 @@ import { database, type Activity } from "@/services/database";
 import { reverseGeocode, searchAll } from "@/services/geoapify";
 import { getRoute, LatLng } from "@/services/routes";
 import { useUser } from "@clerk/clerk-expo";
-import { Crosshair, Menu, X, MapPin, User, ChevronRight } from "lucide-react-native";
+import { Crosshair, Menu, X, MapPin, User, ChevronRight, Search } from "lucide-react-native";
 import { COLORS } from "@/lib/theme";
 import * as Location from "expo-location";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -61,21 +61,12 @@ const MapScreen = () => {
 
   useEffect(() => {
     return () => {
-      console.log("MapScreen unmounting, cleaning up subscription");
       if (trackingSubscription.current) {
         trackingSubscription.current.remove();
         trackingSubscription.current = null;
       }
     };
   }, []);
-
-  useEffect(() => {
-    console.log("Selected Location changed:", selectedLocation);
-  }, [selectedLocation]);
-
-  useEffect(() => {
-    console.log("Route changed:", !!route);
-  }, [route]);
 
   const interestsRef = useRef<string[]>([]);
   const lastRoutePosition = useRef<{
@@ -209,6 +200,16 @@ const MapScreen = () => {
     setResults([]);
     setQuery(place.place_name);
     Keyboard.dismiss();
+
+    mapRef.current?.animateToRegion(
+      {
+        latitude: lat,
+        longitude: lon,
+        latitudeDelta: 0.02,
+        longitudeDelta: 0.02,
+      },
+      800,
+    );
   };
 
   const handlePoiClick = (event: any) => {
@@ -246,7 +247,6 @@ const MapScreen = () => {
     const init = async () => {
       hasInitialized.current = true;
       try {
-        // 1. Get current position immediately to seed the map
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status === "granted") {
           const loc = await Location.getCurrentPositionAsync({
@@ -258,7 +258,6 @@ const MapScreen = () => {
           });
         }
 
-        // 2. Sync profile and resume tracking if needed
         const profile = await database.getProfile(clerkUser.id);
         if (profile) {
           interestsRef.current = profile.interests || [];
@@ -274,7 +273,7 @@ const MapScreen = () => {
     init();
   }, [clerkUser, handleToggleLocation, updateLocation]);
 
-  // Centering effect (Only once automatically)
+  // Centering effect
   useEffect(() => {
     const target = selectedLocation || userLocation;
     if (target && !hasCentered.current) {
@@ -305,19 +304,19 @@ const MapScreen = () => {
   };
 
   const lastActivityFetchPosition = useRef<{ latitude: number; longitude: number } | null>(null);
-const ACTIVITY_FETCH_DISTANCE_THRESHOLD = 0.5; // 500m
+  const ACTIVITY_FETCH_DISTANCE_THRESHOLD = 0.5; // 500m
 
   const fetchActivities = useCallback(async () => {
     if (!userLocation) return;
     if (lastActivityFetchPosition.current) {
-    const dist = database.calculateDistance(
-       lastActivityFetchPosition.current.latitude,
-       lastActivityFetchPosition.current.longitude,
-       userLocation.latitude,
-       userLocation.longitude,
-     );
-     if (dist < ACTIVITY_FETCH_DISTANCE_THRESHOLD) return;
-   }
+      const dist = database.calculateDistance(
+        lastActivityFetchPosition.current.latitude,
+        lastActivityFetchPosition.current.longitude,
+        userLocation.latitude,
+        userLocation.longitude,
+      );
+      if (dist < ACTIVITY_FETCH_DISTANCE_THRESHOLD) return;
+    }
 
     try {
       const fetchedActivities = await database.getActivities({
@@ -333,12 +332,10 @@ const ACTIVITY_FETCH_DISTANCE_THRESHOLD = 0.5; // 500m
     }
   }, [userLocation]);
 
-  // Fetch when location changes
   useEffect(() => {
     fetchActivities();
   }, [fetchActivities]);
 
-  // Refresh when tab focused & update live location if active
   useFocusEffect(
     useCallback(() => {
       fetchActivities();
@@ -360,14 +357,6 @@ const ACTIVITY_FETCH_DISTANCE_THRESHOLD = 0.5; // 500m
                     longitude: loc.coords.longitude,
                   };
                   updateLocation(coords);
-                  mapRef.current?.animateToRegion(
-                    {
-                      ...coords,
-                      latitudeDelta: 0.05,
-                      longitudeDelta: 0.05,
-                    },
-                    800,
-                  );
                   await startForegroundWatch(clerkUser.id);
                   database.updateLiveLocation(
                     clerkUser.id,
@@ -451,21 +440,32 @@ const ACTIVITY_FETCH_DISTANCE_THRESHOLD = 0.5; // 500m
         style={{ flex: 1 }}
         onLongPress={handleLongPress}
         onPoiClick={handlePoiClick}
+        onPress={(event) => {
+          Keyboard.dismiss();
+          setResults([]);
+          if (event.nativeEvent.action === "marker-press") return;
+        }}
         initialRegion={fallbackRegion}
         showsTraffic={true}
         showsUserLocation={true}
-        showsMyLocationButton={false} // We add our own
+        showsMyLocationButton={false}
+        zoomEnabled={true}
+        scrollEnabled={true}
+        pitchEnabled={true}
+        rotateEnabled={true}
+        showsCompass={true}
+        showsPointsOfInterest={true}
+        showsBuildings={true}
       >
         {selectedLocation && (
           <Marker
             coordinate={selectedLocation}
-            title={selectedLocation.name || "Selected"}
+            title={selectedLocation.name || "Selected Location"}
             pinColor="red"
           />
         )}
         {route && (
           <>
-            {/* Border/shadow layer for depth and visibility */}
             <Polyline
               coordinates={route.points}
               strokeWidth={10}
@@ -473,7 +473,6 @@ const ACTIVITY_FETCH_DISTANCE_THRESHOLD = 0.5; // 500m
               lineCap="round"
               lineJoin="round"
             />
-            {/* White outline for contrast */}
             <Polyline
               coordinates={route.points}
               strokeWidth={7}
@@ -481,7 +480,6 @@ const ACTIVITY_FETCH_DISTANCE_THRESHOLD = 0.5; // 500m
               lineCap="round"
               lineJoin="round"
             />
-            {/* Main route line - bold and vibrant */}
             <Polyline
               coordinates={route.points}
               strokeWidth={5}
@@ -522,7 +520,7 @@ const ACTIVITY_FETCH_DISTANCE_THRESHOLD = 0.5; // 500m
       />
 
       {/* Recenter Button */}
-      <View className="absolute right-4 bottom-32 z-30">
+      <View pointerEvents="box-none" className="absolute right-4 bottom-32 z-30">
         <TouchableOpacity
           className="h-12 w-12 items-center justify-center rounded-full bg-surface border border-border shadow-elevation-2"
           onPress={recenter}
@@ -531,43 +529,53 @@ const ACTIVITY_FETCH_DISTANCE_THRESHOLD = 0.5; // 500m
         </TouchableOpacity>
       </View>
 
-      {/* Floating Menu Toggle */}
-      <View className="absolute right-4 top-12 z-30">
+      {/* Unified Top Controls Bar: Search Input + Floating Menu Button */}
+      <View pointerEvents="box-none" className="absolute left-4 right-4 top-12 z-30 flex-row items-start gap-2">
+        <View className="flex-1 rounded-radius-lg bg-surface/95 p-2 shadow-elevation-2 border border-border">
+          <View className="flex-row items-center h-10 px-3 rounded-radius-md bg-surface-elevated border border-border">
+            <Search size={18} color={COLORS.textSecondary} className="mr-2" />
+            <TextInput
+              placeholder="Search for a place, cafe, etc..."
+              placeholderTextColor={COLORS.textSecondary}
+              value={query}
+              onChangeText={handleSearch}
+              multiline={false}
+              numberOfLines={1}
+              className="flex-1 text-body-md text-foreground font-body p-0 h-full"
+            />
+            {query.length > 0 && (
+              <TouchableOpacity onPress={() => handleSearch("")} className="p-1">
+                <X size={16} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {results.length > 0 && (
+            <FlatList
+              data={results}
+              keyExtractor={(item, index) => `${item.id}-${index}`}
+              keyboardShouldPersistTaps="handled"
+              className="mt-2 max-h-56 border-t border-border"
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  className="border-b border-border/50 py-2.5 px-1"
+                  onPress={() => handleSelectPlace(item)}
+                >
+                  <Text className="text-body-sm text-foreground font-body" numberOfLines={2}>
+                    {item.place_name}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            />
+          )}
+        </View>
+
         <TouchableOpacity
           className="h-12 w-12 items-center justify-center rounded-full bg-surface border border-border shadow-elevation-2"
           onPress={() => setIsMenuOpen(true)}
         >
           <Menu size={22} color={COLORS.textPrimary} />
         </TouchableOpacity>
-      </View>
-
-      {/* Search Box */}
-      <View className="absolute left-4 right-18 top-12 z-20 rounded-radius-md bg-surface/95 p-3 shadow-elevation-2 border border-border">
-        <TextInput
-          placeholder="Search for a place, cafe, etc..."
-          placeholderTextColor={COLORS.textSecondary}
-          value={query}
-          onChangeText={handleSearch}
-          className="h-11 rounded-radius-md bg-surface-elevated px-4 text-body-md text-foreground font-body border border-border"
-        />
-        {results.length > 0 && (
-          <FlatList
-            data={results}
-            keyExtractor={(item, index) => `${item.id}-${index}`}
-            keyboardShouldPersistTaps="handled"
-            className="mt-2 max-h-56"
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                className="border-b border-border py-3"
-                onPress={() => handleSelectPlace(item)}
-              >
-                <Text className="text-body-sm text-foreground font-body" numberOfLines={2}>
-                  {item.place_name}
-                </Text>
-              </TouchableOpacity>
-            )}
-          />
-        )}
       </View>
 
       {/* Info Card */}
@@ -580,6 +588,11 @@ const ACTIVITY_FETCH_DISTANCE_THRESHOLD = 0.5; // 500m
           distanceKm={route?.distanceKm}
           driveDurationMin={route?.durationMin}
           onCreateActivity={() => setIsCreateModalVisible(true)}
+          onClose={() => {
+            setSelectedLocation(null);
+            setRoute(null);
+            setQuery("");
+          }}
         />
       )}
 

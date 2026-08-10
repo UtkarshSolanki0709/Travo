@@ -31,7 +31,6 @@ import {
   Alert,
   FlatList,
   Image,
-  KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
@@ -41,6 +40,9 @@ import {
   View,
   ImageBackground,
 } from "react-native";
+import Animated, { useAnimatedStyle } from "react-native-reanimated";
+import { useReanimatedKeyboardAnimation } from "react-native-keyboard-controller";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -561,11 +563,15 @@ export default function ChatScreen() {
     );
   };
 
+  const insets = useSafeAreaInsets();
+  const { height: keyboardHeight } = useReanimatedKeyboardAnimation();
+
+  const keyboardSpacerStyle = useAnimatedStyle(() => ({
+    height: Math.abs(keyboardHeight.value),
+  }));
+
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      className="flex-1 bg-background"
-    >
+    <View style={{ flex: 1 }} className="flex-1 bg-background">
       <ImageBackground
         source={require("@/assets/textures/paper-texture.png")}
         imageStyle={{ opacity: 0.05 }}
@@ -665,7 +671,10 @@ export default function ChatScreen() {
         )}
 
         {/* Input Bar */}
-        <View className="bg-surface p-3 border-t border-border flex-row items-center shadow-elevation-2">
+        <View
+          style={{ paddingBottom: Math.max(insets.bottom, 12) }}
+          className="bg-surface p-3 border-t border-border flex-row items-center shadow-elevation-2"
+        >
           <TouchableOpacity
             onPress={handlePickMedia}
             disabled={uploadingMedia}
@@ -700,6 +709,9 @@ export default function ChatScreen() {
             />
           </TouchableOpacity>
         </View>
+
+        {/* Animated Keyboard Spacer for Android & iOS */}
+        <Animated.View style={keyboardSpacerStyle} />
 
         {/* Message Action Sheet Modal */}
         <Modal
@@ -794,6 +806,6 @@ export default function ChatScreen() {
           </Pressable>
         </Modal>
       </ImageBackground>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
