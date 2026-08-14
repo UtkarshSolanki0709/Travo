@@ -1,6 +1,6 @@
 import CreateActivityModal from "@/components/CreateActivityModal";
 import { database, type Activity } from "@/services/database";
-import { useUser } from "@clerk/clerk-expo";
+import { useUser } from "@clerk/expo";
 import { X, Calendar, MapPin, Edit3, Trash2, Check, User as UserIcon } from "lucide-react-native";
 import { COLORS } from "@/lib/theme";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";

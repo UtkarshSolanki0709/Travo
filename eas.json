@@ -16,12 +16,15 @@
     },
     "preview": {
       "distribution": "internal",
-      "extends": "default"
+      "android": {
+        "buildType": "apk"
+      }
     },
     "apk": {
-      "buildType": "apk",
       "distribution": "internal",
-      "extends": "default"
+      "android": {
+        "buildType": "apk"
+      }
     },
     "production": {
       "autoIncrement": true,

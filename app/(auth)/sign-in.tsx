@@ -1,4 +1,5 @@
-import { useSignIn, useOAuth, useUser } from '@clerk/clerk-expo';
+import { useSignIn } from "@clerk/expo/legacy";
+import { useOAuth, useUser } from "@clerk/expo";
 import { Link, useRouter } from 'expo-router';
 import {
   Text,

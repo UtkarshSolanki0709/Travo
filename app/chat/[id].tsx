@@ -2,7 +2,7 @@ import { chatService, type Message, type QuotedMessage } from "@/services/chatSe
 import { socketService } from "@/services/socketService";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { COLORS } from "@/lib/theme";
-import { useUser } from "@clerk/clerk-expo";
+import { useUser } from "@clerk/expo";
 import {
   ArrowLeft,
   MoreVertical,

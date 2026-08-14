@@ -4,7 +4,7 @@ import CreateActivityModal from "@/components/CreateActivityModal";
 import { useMapContext } from "@/context/MapContext";
 import { database, type Activity } from "@/services/database";
 import { COLORS } from "@/lib/theme";
-import { useUser } from "@clerk/clerk-expo";
+import { useUser } from "@clerk/expo";
 import { MapPin, PlusCircle, Users, ChevronRight } from "lucide-react-native";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";

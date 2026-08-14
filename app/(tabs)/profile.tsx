@@ -2,7 +2,7 @@ import { useMapContext } from "@/context/MapContext";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { database, Post, PostComment, User } from "@/services/database";
 import { searchLocations, searchVenues } from "@/services/geoapify";
-import { SignedIn, SignedOut, useUser } from "@clerk/clerk-expo";
+import { Show, useUser } from "@clerk/expo";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import { useVideoPlayer } from "expo-video";
@@ -682,7 +682,7 @@ export default function ProfileScreen() {
       className="flex-1 bg-background"
     >
       <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 48 }}>
-        <SignedIn>
+        <Show when="signed-in">
           <ProfileHeader
             userData={userData}
             friendsCount={friendsCount}
@@ -821,11 +821,11 @@ export default function ProfileScreen() {
           visible={isLegalModalVisible}
           onClose={() => setIsLegalModalVisible(false)}
         />
-      </SignedIn>
+      </Show>
 
-      <SignedOut>
+      <Show when="signed-out">
         <LoggedOutView />
-      </SignedOut>
+      </Show>
       </ScrollView>
     </ImageBackground>
   );

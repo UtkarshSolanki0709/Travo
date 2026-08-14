@@ -4,7 +4,7 @@ import {
   type ActivitySize,
   type ActivityVisibility,
 } from "@/services/database";
-import { useUser } from "@clerk/clerk-expo";
+import { useUser } from "@clerk/expo";
 import {
   X,
   MapPin,

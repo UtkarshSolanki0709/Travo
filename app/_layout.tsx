@@ -1,5 +1,5 @@
-import { ClerkProvider, useAuth, useUser } from "@clerk/clerk-expo";
-import { tokenCache } from "@clerk/clerk-expo/token-cache";
+import { ClerkProvider, useAuth, useUser } from "@clerk/expo";
+import { tokenCache } from "@clerk/expo/token-cache";
 import { ThemeProvider } from "@react-navigation/native";
 import {
   Poppins_700Bold,

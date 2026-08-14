@@ -1,7 +1,7 @@
 import { chatService, type Conversation } from "@/services/chatService";
 import { database, type User } from "@/services/database";
 import { COLORS } from "@/lib/theme";
-import { useUser } from "@clerk/clerk-expo";
+import { useUser } from "@clerk/expo";
 import {
   UserPlus,
   Users,

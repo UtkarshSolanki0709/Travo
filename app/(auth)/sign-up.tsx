@@ -8,7 +8,8 @@ import {
   ScrollView,
   ImageBackground,
 } from 'react-native';
-import { useSignUp, useOAuth, useUser } from '@clerk/clerk-expo';
+import { useSignUp } from "@clerk/expo/legacy";
+import { useOAuth, useUser } from "@clerk/expo";
 import { Link, useRouter } from 'expo-router';
 import { Send, AlertCircle, KeyRound, User as UserIcon, Mail, Lock } from 'lucide-react-native';
 import * as WebBrowser from 'expo-web-browser';

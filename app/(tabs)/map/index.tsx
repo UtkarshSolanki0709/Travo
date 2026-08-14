@@ -6,7 +6,7 @@ import { useMapContext } from "@/context/MapContext";
 import { database, type Activity } from "@/services/database";
 import { reverseGeocode, searchAll } from "@/services/geoapify";
 import { getRoute, LatLng } from "@/services/routes";
-import { useUser } from "@clerk/clerk-expo";
+import { useUser } from "@clerk/expo";
 import { Crosshair, Menu, X, MapPin, User, ChevronRight, Search } from "lucide-react-native";
 import { COLORS } from "@/lib/theme";
 import * as Location from "expo-location";
