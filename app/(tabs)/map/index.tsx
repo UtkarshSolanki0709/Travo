@@ -303,38 +303,44 @@ const MapScreen = () => {
     );
   };
 
+  const userLocationRef = useRef(userLocation);
+  useEffect(() => {
+    userLocationRef.current = userLocation;
+  }, [userLocation]);
+
   const lastActivityFetchPosition = useRef<{ latitude: number; longitude: number } | null>(null);
   const ACTIVITY_FETCH_DISTANCE_THRESHOLD = 0.5; // 500m
 
   const fetchActivities = useCallback(async () => {
-    if (!userLocation) return;
+    const loc = userLocationRef.current;
+    if (!loc) return;
     if (lastActivityFetchPosition.current) {
       const dist = database.calculateDistance(
         lastActivityFetchPosition.current.latitude,
         lastActivityFetchPosition.current.longitude,
-        userLocation.latitude,
-        userLocation.longitude,
+        loc.latitude,
+        loc.longitude,
       );
       if (dist < ACTIVITY_FETCH_DISTANCE_THRESHOLD) return;
     }
 
     try {
       const fetchedActivities = await database.getActivities({
-        latitude: userLocation.latitude,
-        longitude: userLocation.longitude,
+        latitude: loc.latitude,
+        longitude: loc.longitude,
         radiusKm: 50,
         status: "upcoming",
       });
       setActivities(fetchedActivities);
-      lastActivityFetchPosition.current = { ...userLocation };
+      lastActivityFetchPosition.current = { ...loc };
     } catch (error) {
       console.error("Failed to fetch activities:", error);
     }
-  }, [userLocation]);
+  }, []);
 
   useEffect(() => {
     fetchActivities();
-  }, [fetchActivities]);
+  }, [fetchActivities, userLocation]);
 
   useFocusEffect(
     useCallback(() => {
@@ -372,7 +378,7 @@ const MapScreen = () => {
           }
         });
       }
-    }, [fetchActivities, clerkUser, updateLocation, startForegroundWatch]),
+    }, [clerkUser?.id]),
   );
 
   const handleActivityCreated = () => {
@@ -446,16 +452,15 @@ const MapScreen = () => {
           if (event.nativeEvent.action === "marker-press") return;
         }}
         initialRegion={fallbackRegion}
-        showsTraffic={true}
         showsUserLocation={true}
         showsMyLocationButton={false}
         zoomEnabled={true}
         scrollEnabled={true}
         pitchEnabled={true}
         rotateEnabled={true}
-        showsCompass={true}
-        showsPointsOfInterest={true}
-        showsBuildings={true}
+        showsCompass={false}
+        showsBuildings={false}
+        showsTraffic={false}
       >
         {selectedLocation && (
           <Marker
@@ -465,29 +470,13 @@ const MapScreen = () => {
           />
         )}
         {route && (
-          <>
-            <Polyline
-              coordinates={route.points}
-              strokeWidth={10}
-              strokeColor="rgba(79, 70, 229, 0.2)"
-              lineCap="round"
-              lineJoin="round"
-            />
-            <Polyline
-              coordinates={route.points}
-              strokeWidth={7}
-              strokeColor="#ffffff"
-              lineCap="round"
-              lineJoin="round"
-            />
-            <Polyline
-              coordinates={route.points}
-              strokeWidth={5}
-              strokeColor="#4f46e5"
-              lineCap="round"
-              lineJoin="round"
-            />
-          </>
+          <Polyline
+            coordinates={route.points}
+            strokeWidth={5}
+            strokeColor={COLORS.primary}
+            lineCap="round"
+            lineJoin="round"
+          />
         )}
         {activities.map((activity) => (
           <Marker

@@ -32,7 +32,6 @@ import {
   FlatList,
   Image,
   Modal,
-  Platform,
   Pressable,
   Text,
   TextInput,
@@ -570,6 +569,14 @@ export default function ChatScreen() {
     height: Math.abs(keyboardHeight.value),
   }));
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/(tabs)/chats");
+    }
+  };
+
   return (
     <View style={{ flex: 1 }} className="flex-1 bg-background">
       <ImageBackground
@@ -580,7 +587,7 @@ export default function ChatScreen() {
         {/* Header */}
         <View className="bg-surface border-b border-border pt-12 pb-3 px-4 flex-row items-center justify-between shadow-elevation-1">
           <View className="flex-row items-center">
-            <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
+            <TouchableOpacity onPress={handleBack} className="mr-3 p-1">
               <ArrowLeft size={22} color={COLORS.textPrimary} />
             </TouchableOpacity>
 

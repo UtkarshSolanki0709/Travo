@@ -11,7 +11,6 @@ import {
   Sparkles,
   Clock,
   Calendar,
-  ChevronRight,
   Users,
   UserPlus,
   Heart,

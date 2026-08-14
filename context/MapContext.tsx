@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext, useState } from "react";
+import { createContext, ReactNode, useCallback, useContext, useMemo, useState } from "react";
 
 export interface Location {
   latitude: number;
@@ -22,25 +22,40 @@ interface MapContextType {
 const MapContext = createContext<MapContextType | undefined>(undefined);
 
 export function MapProvider({ children }: { children: ReactNode }) {
-  const [userLocation, setUserLocation] = useState<Location | null>(null);
-  const [selectedLocation, setSelectedLocation] =
-    useState<SelectedLocation | null>(null);
-  const [radiusKm, setRadiusKm] = useState<number>(5); // Default 5km radius
+  const [userLocation, setUserLocationState] = useState<Location | null>(null);
+  const [selectedLocation, setSelectedLocationState] = useState<SelectedLocation | null>(null);
+  const [radiusKm, setRadiusKmState] = useState<number>(5);
 
-  return (
-    <MapContext.Provider
-      value={{
-        userLocation,
-        selectedLocation,
-        radiusKm,
-        setUserLocation,
-        setSelectedLocation,
-        setRadiusKm,
-      }}
-    >
-      {children}
-    </MapContext.Provider>
+  const setUserLocation = useCallback((location: Location | null) => {
+    setUserLocationState((prev) => {
+      if (prev?.latitude === location?.latitude && prev?.longitude === location?.longitude) {
+        return prev;
+      }
+      return location;
+    });
+  }, []);
+
+  const setSelectedLocation = useCallback((location: SelectedLocation | null) => {
+    setSelectedLocationState(location);
+  }, []);
+
+  const setRadiusKm = useCallback((radius: number) => {
+    setRadiusKmState(radius);
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      userLocation,
+      selectedLocation,
+      radiusKm,
+      setUserLocation,
+      setSelectedLocation,
+      setRadiusKm,
+    }),
+    [userLocation, selectedLocation, radiusKm, setUserLocation, setSelectedLocation, setRadiusKm]
   );
+
+  return <MapContext.Provider value={value}>{children}</MapContext.Provider>;
 }
 
 export function useMapContext() {

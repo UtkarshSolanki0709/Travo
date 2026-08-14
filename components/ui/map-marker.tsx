@@ -20,15 +20,6 @@ export interface MapMarkerProps {
   IconComponent?: React.ComponentType<{ size: number; color: string }>;
 }
 
-/**
- * Custom Hexagonal Map Marker Component per DESIGN.md Section 5.
- *
- * Distinctive hexagonal shape rendered via SVG polygon.
- * - Category-colored fill
- * - Selected state: scales to 1.15 with spring physics
- * - Clustered state: neutral fill with count badge
- * - User Location state: pulsing teal dot (respects reduced-motion)
- */
 export function MapMarker({
   category = 'food',
   isSelected = false,

@@ -22,9 +22,7 @@ import { database } from "../services/database";
 import { PortalHost } from "@rn-primitives/portal";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { NAV_THEME, COLORS } from "../lib/theme";
-// import "../services/locationTask"; // Register background task
 
-// Prevent splash screen from auto-hiding until fonts are loaded
 SplashScreen.preventAutoHideAsync();
 
 const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;

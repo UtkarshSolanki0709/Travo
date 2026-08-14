@@ -109,7 +109,7 @@ export default function CreatePostModal({
                       <VideoView
                         style={{ width: "100%", height: "100%" }}
                         player={videoPlayer}
-                        allowsFullscreen
+                        fullscreenOptions={{ enable: true }}
                         allowsPictureInPicture
                         nativeControls
                       />
@@ -212,7 +212,7 @@ export default function CreatePostModal({
                   const primaryLabel = item.text ?? item.place_name ?? "";
                   return (
                     <TouchableOpacity
-                      key={item.place_id || item.id || index}
+                      key={`venue-${item.place_id || item.id || "v"}-${index}`}
                       className="flex-row items-center p-3 border-b border-slate-100 gap-2.5"
                       onPress={() => onSelectVenue(item)}
                     >
@@ -259,7 +259,7 @@ export default function CreatePostModal({
                   const primaryLabel = item.text ?? item.place_name ?? "";
                   return (
                     <TouchableOpacity
-                      key={item.place_id || item.id || index}
+                      key={`loc-${item.place_id || item.id || "l"}-${index}`}
                       className="flex-row items-center p-3 border-b border-slate-100 gap-2.5"
                       onPress={() => onSelectLocation(item)}
                     >

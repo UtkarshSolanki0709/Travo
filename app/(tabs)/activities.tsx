@@ -112,11 +112,17 @@ const ActivitiesScreen = () => {
     setRefreshing(false);
   }, [fetchNearbyActivities, fetchUserActivities]);
 
+  const fetchNearbyActivitiesRef = useRef(fetchNearbyActivities);
+  fetchNearbyActivitiesRef.current = fetchNearbyActivities;
+
+  const fetchUserActivitiesRef = useRef(fetchUserActivities);
+  fetchUserActivitiesRef.current = fetchUserActivities;
+
   useFocusEffect(
     useCallback(() => {
-      fetchNearbyActivities({ forceImmediate: true });
-      fetchUserActivities();
-    }, [fetchNearbyActivities, fetchUserActivities]),
+      fetchNearbyActivitiesRef.current({ forceImmediate: true });
+      fetchUserActivitiesRef.current();
+    }, []),
   );
 
   const displayActivities = useMemo(() => {

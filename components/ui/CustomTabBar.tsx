@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { COLORS } from '@/lib/theme';
 import { useReducedMotion } from '@/lib/accessibility';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
@@ -43,12 +44,14 @@ function TabBarItem({
   const scale = useSharedValue(1);
   const progress = useSharedValue(isFocused ? 1 : 0);
 
-  // Update progress when focus changes
-  if (isFocused && progress.value !== 1) {
-    progress.value = reduceMotion ? 1 : withTiming(1, { duration: 250 });
-  } else if (!isFocused && progress.value !== 0) {
-    progress.value = reduceMotion ? 0 : withTiming(0, { duration: 250 });
-  }
+  // Update progress when focus changes safely inside useEffect
+  useEffect(() => {
+    if (isFocused) {
+      progress.value = reduceMotion ? 1 : withTiming(1, { duration: 250 });
+    } else {
+      progress.value = reduceMotion ? 0 : withTiming(0, { duration: 250 });
+    }
+  }, [isFocused, reduceMotion, progress]);
 
   const IconComponent = TAB_ICONS[route as keyof typeof TAB_ICONS];
   const label = TAB_LABELS[route] || route;

@@ -5,7 +5,10 @@ export default function TabLayout() {
   return (
     <Tabs
       tabBar={(props) => <CustomTabBar {...props} />}
-      screenOptions={{ headerShown: false }}
+      screenOptions={{
+        headerShown: false,
+        freezeOnBlur: true,
+      }}
     >
       <Tabs.Screen
         name="map/index"

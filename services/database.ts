@@ -961,6 +961,20 @@ export const database = {
   },
 
   /**
+   * Remove an existing friend (unfriend)
+   */
+  async removeFriend(userId: string, targetUserId: string) {
+    const { error } = await supabase
+      .from("friendships")
+      .delete()
+      .or(
+        `and(requester_id.eq.${userId},addressee_id.eq.${targetUserId}),and(requester_id.eq.${targetUserId},addressee_id.eq.${userId})`
+      );
+
+    if (error) throw error;
+  },
+
+  /**
    * Get all accepted friends for a user
    */
   async getFriends(userId: string): Promise<User[]> {

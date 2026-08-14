@@ -9,12 +9,14 @@ import {
   MessageCircle,
   X,
   Check,
-  Search,
   MessageSquare,
+  UserCheck,
+  UserMinus,
+  Clock,
 } from "lucide-react-native";
 import { format } from "date-fns";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -71,10 +73,13 @@ export default function ChatsScreen() {
     }
   }, [clerkUser?.id]);
 
+  const fetchDataRef = useRef(fetchData);
+  fetchDataRef.current = fetchData;
+
   useFocusEffect(
     useCallback(() => {
-      fetchData();
-    }, [fetchData]),
+      fetchDataRef.current();
+    }, []),
   );
 
   const onRefresh = async () => {
@@ -165,6 +170,48 @@ export default function ChatsScreen() {
     }
   };
 
+  const handleRemoveFriend = (friend: User) => {
+    Alert.alert(
+      "Remove Friend",
+      `Are you sure you want to remove ${friend.display_name || friend.username} from your friends list?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: async () => {
+            if (!clerkUser?.id) return;
+            try {
+              await database.removeFriend(clerkUser.id, friend.id);
+              await fetchData();
+              Alert.alert("Success", "Friend removed");
+            } catch (error) {
+              console.error("handleRemoveFriend error:", error);
+              Alert.alert("Error", "Failed to remove friend");
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const getSearchUserStatus = (targetId: string) => {
+    if (friends.some((f) => f.id === targetId)) {
+      return "friends";
+    }
+    const pendingReq = pendingRequests.find(
+      (r) => r.requester_id === targetId || r.addressee_id === targetId,
+    );
+    if (pendingReq) {
+      if (pendingReq.requester_id === clerkUser?.id) {
+        return "pending_sent";
+      } else {
+        return { type: "pending_received", request: pendingReq };
+      }
+    }
+    return "none";
+  };
+
   const renderConversationItem = ({ item }: { item: Conversation }) => {
     const isGroup = item.type === "group";
     const title = isGroup
@@ -245,15 +292,24 @@ export default function ChatsScreen() {
         </View>
       </View>
 
-      <TouchableOpacity
-        onPress={() => handleStartDirectChat(item.id)}
-        className="bg-primary/10 px-3.5 py-2 rounded-radius-md flex-row items-center border border-primary/20"
-      >
-        <MessageSquare size={16} color={COLORS.primary} />
-        <Text className="text-primary font-semibold text-body-sm font-body ml-1.5">
-          Message
-        </Text>
-      </TouchableOpacity>
+      <View className="flex-row items-center gap-2">
+        <TouchableOpacity
+          onPress={() => handleStartDirectChat(item.id)}
+          className="bg-primary/10 px-3.5 py-2 rounded-radius-md flex-row items-center border border-primary/20"
+        >
+          <MessageSquare size={16} color={COLORS.primary} />
+          <Text className="text-primary font-semibold text-body-sm font-body ml-1.5">
+            Message
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => handleRemoveFriend(item)}
+          className="p-2 bg-destructive/10 rounded-radius-md border border-destructive/20"
+        >
+          <UserMinus size={16} color={COLORS.destructive} />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -471,39 +527,78 @@ export default function ChatsScreen() {
                 <FlatList
                   data={searchResults}
                   keyExtractor={(item) => item.id}
-                  renderItem={({ item }) => (
-                    <View className="flex-row items-center justify-between py-3 border-b border-border">
-                      <View className="flex-row items-center flex-1 mr-2">
-                        <Avatar isSelf={false}>
-                          {item.avatar_url ? (
-                            <AvatarImage source={{ uri: item.avatar_url }} />
-                          ) : (
-                            <AvatarFallback>
-                              <UserIcon size={20} color={COLORS.primary} />
-                            </AvatarFallback>
-                          )}
-                        </Avatar>
-                        <View className="ml-3 flex-1">
-                          <Text className="text-body-md font-bold text-foreground font-body" numberOfLines={1}>
-                            {item.display_name || item.username}
-                          </Text>
-                          <Text className="text-body-sm text-muted-foreground font-body">
-                            @{item.username}
-                          </Text>
-                        </View>
-                      </View>
+                  renderItem={({ item }) => {
+                    const status = getSearchUserStatus(item.id);
 
-                      <Button
-                        onPress={() => handleSendFriendRequest(item.id)}
-                        variant="default"
-                        size="sm"
-                      >
-                        <Text className="text-white font-semibold text-body-sm font-body">
-                          Add Friend
-                        </Text>
-                      </Button>
-                    </View>
-                  )}
+                    return (
+                      <View className="flex-row items-center justify-between py-3 border-b border-border">
+                        <View className="flex-row items-center flex-1 mr-2">
+                          <Avatar isSelf={false}>
+                            {item.avatar_url ? (
+                              <AvatarImage source={{ uri: item.avatar_url }} />
+                            ) : (
+                              <AvatarFallback>
+                                <UserIcon size={20} color={COLORS.primary} />
+                              </AvatarFallback>
+                            )}
+                          </Avatar>
+                          <View className="ml-3 flex-1">
+                            <Text className="text-body-md font-bold text-foreground font-body" numberOfLines={1}>
+                              {item.display_name || item.username}
+                            </Text>
+                            <Text className="text-body-sm text-muted-foreground font-body">
+                              @{item.username}
+                            </Text>
+                          </View>
+                        </View>
+
+                        {status === "friends" ? (
+                          <TouchableOpacity
+                            onPress={() => {
+                              setIsAddFriendModalVisible(false);
+                              handleStartDirectChat(item.id);
+                            }}
+                            className="bg-primary/10 px-3.5 py-2 rounded-radius-md flex-row items-center border border-primary/20"
+                          >
+                            <MessageSquare size={14} color={COLORS.primary} />
+                            <Text className="text-primary font-semibold text-body-sm font-body ml-1.5">
+                              Message
+                            </Text>
+                          </TouchableOpacity>
+                        ) : status === "pending_sent" ? (
+                          <View className="bg-surface-elevated px-3 py-2 rounded-radius-md flex-row items-center border border-border">
+                            <Clock size={14} color={COLORS.textSecondary} />
+                            <Text className="text-muted-foreground font-semibold text-body-sm font-body ml-1.5">
+                              Requested
+                            </Text>
+                          </View>
+                        ) : typeof status === "object" && status.type === "pending_received" ? (
+                          <TouchableOpacity
+                            onPress={() => {
+                              setIsAddFriendModalVisible(false);
+                              handleAcceptRequest(status.request.id, status.request.requester_id);
+                            }}
+                            className="bg-primary px-3.5 py-2 rounded-radius-md flex-row items-center"
+                          >
+                            <UserCheck size={14} color="white" />
+                            <Text className="text-white font-semibold text-body-sm font-body ml-1.5">
+                              Accept
+                            </Text>
+                          </TouchableOpacity>
+                        ) : (
+                          <Button
+                            onPress={() => handleSendFriendRequest(item.id)}
+                            variant="default"
+                            size="sm"
+                          >
+                            <Text className="text-white font-semibold text-body-sm font-body">
+                              Add Friend
+                            </Text>
+                          </Button>
+                        )}
+                      </View>
+                    );
+                  }}
                   ListEmptyComponent={
                     searchQuery.trim() ? (
                       <Text className="text-center text-muted-foreground font-body py-8">

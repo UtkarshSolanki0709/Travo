@@ -174,7 +174,7 @@ export default function PostDetailModal({
                   <VideoView
                     style={{ width: "100%", height: "100%" }}
                     player={videoPlayer}
-                    allowsFullscreen
+                    fullscreenOptions={{ enable: true }}
                     allowsPictureInPicture
                     nativeControls
                   />
