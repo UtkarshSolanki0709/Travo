@@ -20,6 +20,7 @@ import PostDetailModal from "@/components/PostDetailModal";
 import PostsGrid from "@/components/PostsGrid";
 import PostsTabs from "@/components/PostsTabs";
 import ProfileHeader from "@/components/ProfileHeader";
+import LegalPrivacyModal from "@/components/LegalPrivacyModal";
 
 export default function ProfileScreen() {
   const { user: clerkUser } = useUser();
@@ -71,6 +72,7 @@ export default function ProfileScreen() {
   // Post Detail States
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isPostDetailVisible, setIsPostDetailVisible] = useState(false);
+  const [isLegalModalVisible, setIsLegalModalVisible] = useState(false);
   const [comments, setComments] = useState<PostComment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [socialLoading, setSocialLoading] = useState(false);
@@ -688,6 +690,7 @@ export default function ProfileScreen() {
             isEditing={isEditing}
             onEditPress={() => setIsEditing(true)}
             onCreatePostPress={() => setIsCreatingPost(true)}
+            onLegalPress={() => setIsLegalModalVisible(true)}
             onAvatarPress={pickImage}
             editingData={editingData}
           />
@@ -812,6 +815,11 @@ export default function ProfileScreen() {
           onReplyToComment={handleReplyToComment}
           onDeletePost={handleDeletePost}
           onEditPost={handleEditPostOpen}
+        />
+
+        <LegalPrivacyModal
+          visible={isLegalModalVisible}
+          onClose={() => setIsLegalModalVisible(false)}
         />
       </SignedIn>
 

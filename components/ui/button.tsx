@@ -33,6 +33,10 @@ const buttonVariants = cva(
           'border-2 border-primary bg-transparent active:bg-primary/10',
           Platform.select({ web: 'hover:bg-primary/10' })
         ),
+        outline: cn(
+          'border border-border bg-transparent active:bg-muted',
+          Platform.select({ web: 'hover:bg-muted' })
+        ),
         ghost: cn(
           'active:bg-muted',
           Platform.select({ web: 'hover:bg-muted' })
@@ -63,6 +67,7 @@ const buttonTextVariants = cva(
         default: 'text-white',
         destructive: 'text-white',
         secondary: 'text-primary',
+        outline: 'text-foreground',
         ghost: 'text-foreground',
       },
       size: {
@@ -118,7 +123,7 @@ function Button({ className, variant = 'default', size = 'default', loading, chi
       return (
         <ActivityIndicator
           size="small"
-          color={variant === 'secondary' || variant === 'ghost' ? COLORS.primary : '#ffffff'}
+          color={variant === 'secondary' || variant === 'ghost' || variant === 'outline' ? COLORS.primary : '#ffffff'}
         />
       );
     }

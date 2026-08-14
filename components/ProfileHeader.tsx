@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity } from 'react-native';
-import { Camera, User as UserIcon, Edit3, PlusCircle } from 'lucide-react-native';
+import { Camera, User as UserIcon, Edit3, PlusCircle, ShieldCheck } from 'lucide-react-native';
 import { getAvatarUrl } from '@/lib/cloudinary';
 import { User } from '@/services/database';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -14,6 +14,7 @@ interface ProfileHeaderProps {
   isEditing: boolean;
   onEditPress: () => void;
   onCreatePostPress: () => void;
+  onLegalPress?: () => void;
   onAvatarPress?: () => void;
   editingData?: Partial<User>;
 }
@@ -25,6 +26,7 @@ export default function ProfileHeader({
   isEditing,
   onEditPress,
   onCreatePostPress,
+  onLegalPress,
   onAvatarPress,
   editingData,
 }: ProfileHeaderProps) {
@@ -78,7 +80,7 @@ export default function ProfileHeader({
             </View>
           </Card>
 
-          <View className="flex-row gap-3 mt-4">
+          <View className="flex-row gap-2 mt-4 flex-wrap justify-center">
             <Button variant="secondary" size="default" onPress={onEditPress}>
               <Edit3 size={16} color={COLORS.primary} />
               <Text className="text-primary font-semibold text-body-sm font-body">Edit Profile</Text>
@@ -88,6 +90,13 @@ export default function ProfileHeader({
               <PlusCircle size={16} color="#fff" />
               <Text className="text-white font-semibold text-body-sm font-body">Add Post</Text>
             </Button>
+
+            {onLegalPress && (
+              <Button variant="outline" size="default" onPress={onLegalPress}>
+                <ShieldCheck size={16} color={COLORS.textSecondary} />
+                <Text className="text-muted-foreground font-semibold text-body-sm font-body">Legal & Policy</Text>
+              </Button>
+            )}
           </View>
         </>
       )}

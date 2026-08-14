@@ -18,6 +18,11 @@
       "distribution": "internal",
       "extends": "default"
     },
+    "apk": {
+      "buildType": "apk",
+      "distribution": "internal",
+      "extends": "default"
+    },
     "production": {
       "autoIncrement": true,
       "extends": "default"
