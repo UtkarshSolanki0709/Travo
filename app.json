@@ -10,7 +10,7 @@
     "updates": {
       "enabled": false
     },
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.utkarsh07.travo",
