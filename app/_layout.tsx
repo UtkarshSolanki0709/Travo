@@ -1,27 +1,27 @@
 import { ClerkProvider, useAuth, useUser } from "@clerk/expo";
 import { tokenCache } from "@clerk/expo/token-cache";
-import { ThemeProvider } from "@react-navigation/native";
-import {
-  Poppins_700Bold,
-  Poppins_800ExtraBold,
-} from "@expo-google-fonts/poppins";
 import {
   Inter_400Regular,
   Inter_500Medium,
   Inter_600SemiBold,
 } from "@expo-google-fonts/inter";
+import {
+  Poppins_700Bold,
+  Poppins_800ExtraBold,
+} from "@expo-google-fonts/poppins";
+import { ThemeProvider } from "@react-navigation/native";
+import { PortalHost } from "@rn-primitives/portal";
 import { useFonts } from "expo-font";
 import { Slot, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useCallback, useEffect } from "react";
-import "react-native-url-polyfill/auto";
-import "../global.css";
 import { ActivityIndicator, View } from "react-native";
-import { MapProvider } from "../context/MapContext";
-import { database } from "../services/database";
-import { PortalHost } from "@rn-primitives/portal";
 import { KeyboardProvider } from "react-native-keyboard-controller";
-import { NAV_THEME, COLORS } from "../lib/theme";
+import "react-native-url-polyfill/auto";
+import { MapProvider } from "../context/MapContext";
+import "../global.css";
+import { COLORS, NAV_THEME } from "../lib/theme";
+import { database } from "../services/database";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -59,7 +59,7 @@ function InitialLayout() {
           .catch((err) => console.error("Error syncing user:", err));
       }
     }
-    
+
     if (!isSignedIn && !inAuthGroup) {
       // Redirect to sign-in if not signed in and trying to access app
       router.replace("/sign-in");
@@ -68,7 +68,14 @@ function InitialLayout() {
 
   if (!isLoaded) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: COLORS.background }}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: COLORS.background,
+        }}
+      >
         <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );

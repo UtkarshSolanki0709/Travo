@@ -85,7 +85,13 @@ export const socketService = {
     };
   },
 
-  onTypingStatus(callback: (data: { conversationId: string; userId: string; isTyping: boolean }) => void) {
+  onTypingStatus(
+    callback: (data: {
+      conversationId: string;
+      userId: string;
+      isTyping: boolean;
+    }) => void,
+  ) {
     if (!socket) return () => {};
     socket.on("typingStatus", callback);
     return () => {
@@ -113,19 +119,32 @@ export const socketService = {
     }
   },
 
-  emitDeleteMessage(data: { messageId: string; conversationId: string; deleteForEveryone: boolean; deletedMessage?: any }) {
+  emitDeleteMessage(data: {
+    messageId: string;
+    conversationId: string;
+    deleteForEveryone: boolean;
+    deletedMessage?: any;
+  }) {
     if (socket && socket.connected) {
       socket.emit("deleteMessage", data);
     }
   },
 
-  emitTyping(data: { conversationId: string; userId: string; isTyping: boolean }) {
+  emitTyping(data: {
+    conversationId: string;
+    userId: string;
+    isTyping: boolean;
+  }) {
     if (socket && socket.connected) {
       socket.emit("typing", data);
     }
   },
 
-  emitMarkAsSeen(data: { conversationId: string; userId: string; messageIds?: string[] }) {
+  emitMarkAsSeen(data: {
+    conversationId: string;
+    userId: string;
+    messageIds?: string[];
+  }) {
     if (socket && socket.connected) {
       socket.emit("markAsSeen", data);
     }

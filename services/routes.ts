@@ -32,7 +32,6 @@ export async function getRoute(
     const originStr = `${origin.latitude},${origin.longitude}`;
     const destStr = `${destination.latitude},${destination.longitude}`;
 
-    // Geoapify Routing API with traffic approximation
     const url = `https://api.geoapify.com/v1/routing?waypoints=${originStr}|${destStr}&mode=drive&traffic=approximated&apiKey=${GEOAPIFY_API_KEY}`;
 
     const res = await fetchWithTimeout(url);
@@ -49,31 +48,26 @@ export async function getRoute(
       return null;
     }
 
-    const properties = feature.properties;
+    const {properties} = feature;
 
-    // Geoapify returns distance in meters and time in seconds
     const distanceKm = properties.distance / 1000;
     const durationMin = properties.time / 60;
 
-    // Geoapify returns coordinates as [lon, lat] arrays in geometry.coordinates
-    // For "drive" mode it might be a MultiLineString or LineString.
-    // Usually features[0].geometry.coordinates is an array of arrays of positions for LineString
-    // or array of array of arrays for MultiLineString.
+    
 
-    const geometry = feature.geometry;
+     const {geometry} = feature;
     let rawPoints: number[][] = [];
 
     if (geometry.type === "LineString") {
       rawPoints = geometry.coordinates;
     } else if (geometry.type === "MultiLineString") {
-      // Flatten MultiLineString
       geometry.coordinates.forEach((segment: number[][]) => {
         rawPoints.push(...segment);
       });
     }
 
     const points: LatLng[] = rawPoints.map((p) => ({
-      latitude: p[1], // GeoJSON is [lon, lat]
+      latitude: p[1], 
       longitude: p[0],
     }));
 

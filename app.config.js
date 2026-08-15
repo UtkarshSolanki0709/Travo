@@ -1,8 +1,8 @@
-const { withAppBuildGradle } = require('@expo/config-plugins');
+const { withAppBuildGradle } = require("@expo/config-plugins");
 
 const withDuplicateManifestFix = (config) => {
   return withAppBuildGradle(config, (config) => {
-    if (config.modResults.language === 'groovy') {
+    if (config.modResults.language === "groovy") {
       const patch = `
 android {
     packagingOptions {
@@ -15,7 +15,11 @@ android {
     }
 }
 `;
-      if (!config.modResults.contents.includes('META-INF/versions/9/OSGI-INF/MANIFEST.MF')) {
+      if (
+        !config.modResults.contents.includes(
+          "META-INF/versions/9/OSGI-INF/MANIFEST.MF",
+        )
+      ) {
         config.modResults.contents += patch;
       }
     }
