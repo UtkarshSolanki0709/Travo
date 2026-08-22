@@ -28,6 +28,7 @@ import { MapProvider } from "../context/MapContext";
 import "../global.css";
 import { useThemeHotkey } from "../hooks/useThemeHotkey";
 import { COLORS, NAV_THEME } from "../lib/theme";
+import { setSupabaseTokenGetter } from "../lib/supabase";
 import { database } from "../services/database";
 import { analytics } from "../services/analytics";
 // Importing the task module both binds LOCATION_TASK_NAME and registers the
@@ -45,11 +46,20 @@ if (!CLERK_PUBLISHABLE_KEY) {
 }
 
 function InitialLayout() {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn, getToken } = useAuth();
   const { user } = useUser();
   const segments = useSegments();
   const router = useRouter();
   const trackedAppOpen = useRef(false);
+
+  // Wire Clerk JWT to Supabase client for RLS authentication
+  useEffect(() => {
+    if (isSignedIn) {
+      setSupabaseTokenGetter(() => getToken({ template: "travo" }));
+    } else {
+      setSupabaseTokenGetter(null);
+    }
+  }, [isSignedIn, getToken]);
 
   // Analytics: identify the user, log app_open once, flush on foreground
   useEffect(() => {
