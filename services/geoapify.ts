@@ -99,49 +99,6 @@ export const searchVenues = async (
 };
 
 /**
- * Browse venues by CATEGORY in an area (no text search)
- * Used for map exploration and "discovery" modes
- */
-export const browseVenuesByCategory = async (
-  category: string, // e.g., "catering.cafe"
-  bbox: [number, number, number, number], // [lon1, lat1, lon2, lat2]
-): Promise<GeoApifyFeature[]> => {
-  if (!GEOAPIFY_API_KEY) return [];
-
-  try {
-    // Use /v2/places for category browsing - NO text parameter
-    const res = await fetchGeoapify("v2/places", {
-      categories: category,
-      filter: `rect:${bbox.join(",")}`,
-      limit: 20,
-      apiKey: GEOAPIFY_API_KEY,
-    });
-    if (!res.ok) {
-      console.error(`Geoapify places v2 error: ${res.status}`);
-      return [];
-    }
-
-    const data = await res.json();
-    const features = data.features || [];
-
-    return features.map((f: any) => {
-      const props = f.properties || {};
-      return {
-        id: props.place_id || f.id,
-        text: props.name || props.address_line1 || "Unnamed Venue",
-        place_name: props.formatted || props.address_line1,
-        center: [props.lon, props.lat],
-        properties: props,
-        place_id: props.place_id || f.id,
-      };
-    });
-  } catch (error) {
-    console.error("Browse venues failed:", error);
-    return [];
-  }
-};
-
-/**
  * Search for general locations (cities, countries, neighborhoods, addresses)
  * Used when user is adding a "Location" to their post
  */
