@@ -170,6 +170,27 @@ export default function Page() {
               </Text>
             </Button>
 
+            <View className="mt-5 flex-row flex-wrap items-center justify-center">
+              <Text className="text-body-sm text-muted-foreground font-body">
+                By continuing, you agree to our
+              </Text>
+              <Link href="/legal/terms" asChild>
+                <TouchableOpacity>
+                  <Text className="mx-1 text-body-sm font-semibold text-primary font-body">
+                    Terms of Service
+                  </Text>
+                </TouchableOpacity>
+              </Link>
+              <Text className="text-body-sm text-muted-foreground font-body">and</Text>
+              <Link href="/legal/privacy" asChild>
+                <TouchableOpacity>
+                  <Text className="mx-1 text-body-sm font-semibold text-primary font-body">
+                    Privacy Policy
+                  </Text>
+                </TouchableOpacity>
+              </Link>
+            </View>
+
             <View className="mt-6 flex-row items-center justify-center">
               <Text className="text-body-sm text-muted-foreground font-body">
                 Don&apos;t have an account?
