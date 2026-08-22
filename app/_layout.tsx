@@ -1,5 +1,8 @@
 import { ClerkProvider, useAuth, useUser } from "@clerk/expo";
 import { tokenCache } from "@clerk/expo/token-cache";
+import * as Location from "expo-location";
+import * as SecureStore from "expo-secure-store";
+import * as TaskManager from "expo-task-manager";
 import {
   Inter_400Regular,
   Inter_500Medium,
@@ -26,6 +29,9 @@ import "../global.css";
 import { useThemeHotkey } from "../hooks/useThemeHotkey";
 import { COLORS, NAV_THEME } from "../lib/theme";
 import { database } from "../services/database";
+// Importing the task module both binds LOCATION_TASK_NAME and registers the
+// background task definition with TaskManager (must run once at startup).
+import { LOCATION_TASK_NAME } from "../services/locationTask";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -62,6 +68,20 @@ function InitialLayout() {
           )
           .catch((err) => console.error("Error syncing user:", err));
       }
+    } else {
+      // Stop background journey sharing so a signed-out device stops
+      // updating the previous user's live location.
+      TaskManager.isTaskRegisteredAsync(LOCATION_TASK_NAME)
+        .then((registered) =>
+          registered
+            ? Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME)
+            : null,
+        )
+        .catch(() => {})
+        .finally(() => {
+          SecureStore.deleteItemAsync("current_user_id").catch(() => {});
+          SecureStore.deleteItemAsync("user_interests").catch(() => {});
+        });
     }
 
     if (!isSignedIn && !inAuthGroup) {

@@ -10,10 +10,12 @@ import { useUser } from "@clerk/expo";
 import { Crosshair, Menu, X, MapPin, User, ChevronRight, Search } from "lucide-react-native";
 import { COLORS } from "@/lib/theme";
 import * as Location from "expo-location";
+import * as TaskManager from "expo-task-manager";
 import { useFocusEffect, useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import debounce from "lodash.debounce";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { LOCATION_TASK_NAME } from "@/services/locationTask";
 
 import {
   FlatList,
@@ -132,21 +134,59 @@ const MapScreen = () => {
         if (value) {
           const { status } = await Location.requestForegroundPermissionsAsync();
           if (status !== "granted") throw new Error("Permission denied");
+
+          // Persist identity for the background task before any handoff
+          await SecureStore.setItemAsync("current_user_id", clerkUser.id);
+          await SecureStore.setItemAsync(
+            "user_interests",
+            JSON.stringify(interestsRef.current || []),
+          );
+
           await startForegroundWatch(clerkUser.id);
           await database.updateProfile(clerkUser.id, {
             is_live_tracking: true,
             interests: interestsRef.current || [],
           });
+
+          // Background journey sharing. Graceful degradation: if the user
+          // denies "Always", the foreground watch above keeps working.
+          // ponytail: OS-driven batching (deferred updates) — not real-time;
+          // tighten intervals if journey lines look too coarse.
+          try {
+            const bg = await Location.requestBackgroundPermissionsAsync();
+            const alreadyRegistered =
+              await TaskManager.isTaskRegisteredAsync(LOCATION_TASK_NAME);
+            if (bg.status === "granted" && !alreadyRegistered) {
+              await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
+                accuracy: Location.Accuracy.Balanced,
+                distanceInterval: 50,
+                deferredUpdatesInterval: 60000,
+              });
+            }
+          } catch (bgError) {
+            console.error("Background location not started:", bgError);
+          }
         } else {
           if (trackingSubscription.current) {
             trackingSubscription.current.remove();
             trackingSubscription.current = null;
+          }
+          try {
+            const registered = await TaskManager.isTaskRegisteredAsync(
+              LOCATION_TASK_NAME,
+            );
+            if (registered) {
+              await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
+            }
+          } catch (stopError) {
+            console.error("Background location not stopped:", stopError);
           }
           await database.updateProfile(clerkUser.id, {
             is_live_tracking: false,
             interests: interestsRef.current || [],
           });
           await SecureStore.deleteItemAsync("current_user_id");
+          await SecureStore.deleteItemAsync("user_interests");
         }
       } catch (error) {
         console.error("Toggle location failed", error);
