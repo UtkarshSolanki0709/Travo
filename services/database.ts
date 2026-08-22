@@ -553,7 +553,8 @@ export const database = {
     let query = supabase
       .from("activities")
       .select("*, participant_count:activity_participants(count)")
-      .order("start_time", { ascending: true });
+      .order("start_time", { ascending: true })
+      .limit(100);
 
     if (filters?.status) {
       query = query.eq("status", filters.status);

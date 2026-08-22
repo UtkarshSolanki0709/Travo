@@ -4,6 +4,7 @@ const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
 let socket: Socket | null = null;
 let currentConnectedUserId: string | null = null;
+let reconnectListeners: Array<() => void> = [];
 
 export const socketService = {
   connect(userId: string) {
@@ -30,6 +31,7 @@ export const socketService = {
 
     socket.on("connect", () => {
       console.log("Connected to Convo real-time chat server:", BACKEND_URL);
+      reconnectListeners.forEach((fn) => fn());
     });
 
     socket.on("connect_error", (error) => {
@@ -51,6 +53,14 @@ export const socketService = {
 
   getSocket() {
     return socket;
+  },
+
+  /** Fired on every (re)connect — used to flush the offline outbox. */
+  onReconnect(callback: () => void) {
+    reconnectListeners.push(callback);
+    return () => {
+      reconnectListeners = reconnectListeners.filter((fn) => fn !== callback);
+    };
   },
 
   onNewMessage(callback: (message: any) => void) {

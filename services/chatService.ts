@@ -270,7 +270,8 @@ export const chatService = {
         "*, sender:users!messages_sender_id_fkey(*), receipts:message_receipts(*)",
       )
       .eq("conversation_id", conversationId)
-      .order("created_at", { ascending: true });
+      .order("created_at", { ascending: false })
+      .limit(200);
 
     if (!primaryError && primaryData) {
       data = primaryData;
@@ -280,7 +281,8 @@ export const chatService = {
         .from("messages")
         .select("*, receipts:message_receipts(*)")
         .eq("conversation_id", conversationId)
-        .order("created_at", { ascending: true });
+        .order("created_at", { ascending: false })
+        .limit(200);
 
       if (fallbackError) {
         console.error("getMessages DB error:", fallbackError);
@@ -317,6 +319,9 @@ export const chatService = {
       }
       return true;
     });
+
+    // Fetched newest-first (limit 200) — restore chronological order
+    filtered.reverse();
 
     return filtered.map((msg: any) => {
       let status: MessageStatus = "sent";

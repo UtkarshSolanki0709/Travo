@@ -7,7 +7,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { Send } from "lucide-react-native";
-import { Button } from "@/components/ui";
+import { Button } from "@/components/ui/button";
 import LegalSections from "@/components/common/LegalSections";
 import { COLORS } from "@/lib/theme";
 import {

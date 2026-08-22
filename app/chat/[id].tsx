@@ -44,6 +44,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { messageStore } from "@/services/messageStore";
 
 export default function ChatScreen() {
   const { id: conversationId } = useLocalSearchParams<{ id: string }>();
@@ -75,14 +76,51 @@ export default function ChatScreen() {
     }
   }, [clerkUser?.id]);
 
+  // Merge by id/client_temp_id so fetches never clobber messages that
+  // arrived over the socket mid-flight, and server echoes replace
+  // optimistic temp rows instead of duplicating them.
+  const mergeMessages = useCallback((incoming: Message[]) => {
+    setMessages((prev) => {
+      const merged = [...prev];
+      for (const newMsg of incoming) {
+        const idx = merged.findIndex(
+          (m) =>
+            m.id === newMsg.id ||
+            (newMsg.client_temp_id &&
+              m.client_temp_id === newMsg.client_temp_id),
+        );
+        if (idx >= 0) {
+          merged[idx] = { ...merged[idx], ...newMsg };
+        } else {
+          merged.push(newMsg);
+        }
+      }
+      merged.sort((a, b) => a.created_at.localeCompare(b.created_at));
+      return merged;
+    });
+  }, []);
+
   const fetchMessages = useCallback(async () => {
     if (!conversationId || !clerkUser?.id) return;
     try {
+      // Instant open: show the cached history while the network fetch runs
+      const cached = await messageStore.hydrateMessages(
+        conversationId,
+        clerkUser.id,
+      );
+      if (cached.length > 0) {
+        mergeMessages(cached);
+        setLoading(false);
+      }
+
       const msgList = await chatService.getMessages(
         conversationId,
         clerkUser.id,
       );
-      setMessages(msgList);
+      mergeMessages(msgList);
+      messageStore
+        .saveMessages(msgList)
+        .catch((e) => console.warn("message cache write failed", e));
 
       // Mark delivered & read
       await chatService.markMessagesDelivered(conversationId, clerkUser.id);
@@ -93,7 +131,7 @@ export default function ChatScreen() {
     } finally {
       setLoading(false);
     }
-  }, [conversationId, clerkUser?.id]);
+  }, [conversationId, clerkUser?.id, mergeMessages]);
 
   useEffect(() => {
     fetchMessages();
@@ -106,23 +144,17 @@ export default function ChatScreen() {
     const unsubscribe = chatService.subscribeToMessages(
       conversationId,
       (newMsg) => {
-        setMessages((prev) => {
-          const exists = prev.some(
-            (m) =>
-              m.id === newMsg.id ||
-              (m.client_temp_id &&
-                m.client_temp_id === newMsg.client_temp_id),
-          );
-          if (exists) {
-            return prev.map((m) =>
-              m.id === newMsg.id ||
-              (m.client_temp_id && m.client_temp_id === newMsg.client_temp_id)
-                ? { ...m, ...newMsg }
-                : m,
-            );
-          }
-          return [...prev, newMsg];
-        });
+        mergeMessages([newMsg]);
+        messageStore
+          .saveMessage(newMsg)
+          .catch((e) => console.warn("message cache write failed", e));
+        messageStore
+          .touchConversation(
+            conversationId,
+            newMsg.text ??
+              (newMsg.media_type ? `[${newMsg.media_type}]` : null),
+          )
+          .catch(() => {});
 
         chatService.markMessagesRead(conversationId, clerkUser.id);
         socketService.emitMarkAsSeen({ conversationId, userId: clerkUser.id });
@@ -139,12 +171,17 @@ export default function ChatScreen() {
               : m,
           ),
         );
+
+        if (msgId) {
+          messageStore.updateStatus(msgId, status).catch(() => {});
+        }
       },
       (editedMsg) => {
         if (!editedMsg) return;
         setMessages((prev) =>
           prev.map((m) => (m.id === editedMsg.id ? { ...m, ...editedMsg } : m)),
         );
+        messageStore.saveMessage(editedMsg).catch(() => {});
       },
       (deleteData) => {
         if (!deleteData) return;
@@ -155,6 +192,9 @@ export default function ChatScreen() {
               : m,
           ),
         );
+        if (deleteData.messageId) {
+          messageStore.markDeleted(deleteData.messageId).catch(() => {});
+        }
       },
       (typingData) => {
         if (typingData.userId !== clerkUser.id) {
@@ -166,7 +206,7 @@ export default function ChatScreen() {
     return () => {
       unsubscribe();
     };
-  }, [conversationId, clerkUser?.id]);
+  }, [conversationId, clerkUser?.id, mergeMessages]);
 
   // Typing status handling
   const handleInputChange = (text: string) => {
@@ -212,7 +252,8 @@ export default function ChatScreen() {
               : m,
           ),
         );
-        await chatService.editMessage(msgToEdit.id, clerkUser.id, textToSend);
+        const edited = await chatService.editMessage(msgToEdit.id, clerkUser.id, textToSend);
+        messageStore.saveMessage(edited).catch(() => {});
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } catch (error: any) {
         Alert.alert("Edit Error", error?.message || "Failed to edit message.");
@@ -253,6 +294,8 @@ export default function ChatScreen() {
     };
 
     setMessages((prev) => [...prev, tempMessage]);
+    // Persist the optimistic row — it doubles as the offline outbox record
+    messageStore.saveMessage(tempMessage).catch(() => {});
 
     try {
       const sentMsg = await chatService.sendMessage(
@@ -280,13 +323,18 @@ export default function ChatScreen() {
       setMessages((prev) =>
         prev.map((m) => (m.client_temp_id === tempId ? sentMsg : m)),
       );
+      messageStore.saveMessage(sentMsg).catch(() => {});
+      messageStore
+        .touchConversation(
+          conversationId,
+          sentMsg.text ??
+            (sentMsg.media_type ? `[${sentMsg.media_type}]` : null),
+        )
+        .catch(() => {});
     } catch (error: any) {
+      // Keep the temp row visible with its 'sending' clock — it stays in
+      // the outbox and auto-retries on reconnect / app foreground.
       console.error("handleSend error:", error);
-      setMessages((prev) => prev.filter((m) => m.client_temp_id !== tempId));
-      Alert.alert(
-        "Send Error",
-        error?.message || "Failed to send message. Please try again.",
-      );
     } finally {
       setSending(false);
     }
@@ -311,12 +359,15 @@ export default function ChatScreen() {
 
       const cloudinaryUrl = await uploadToCloudinary(asset.uri, type);
 
+      // client_temp_id keeps the realtime echo from duplicating this message
+      const mediaTempId = `temp-${Date.now()}`;
       const sentMsg = await chatService.sendMessage(
         conversationId,
         clerkUser.id,
         inputText.trim(),
         cloudinaryUrl,
         type,
+        mediaTempId,
       );
 
       if (!sentMsg.sender && clerkUser) {
@@ -330,7 +381,8 @@ export default function ChatScreen() {
 
       socketService.emitSendMessage(sentMsg);
       setInputText("");
-      setMessages((prev) => [...prev, sentMsg]);
+      mergeMessages([sentMsg]);
+      messageStore.saveMessage(sentMsg).catch(() => {});
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error: any) {
       console.error("handlePickMedia error:", error);
@@ -391,6 +443,7 @@ export default function ChatScreen() {
         ),
       );
       await chatService.deleteMessageForEveryone(msgId, clerkUser.id, conversationId);
+      messageStore.markDeleted(msgId).catch(() => {});
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error: any) {
       Alert.alert("Delete Error", "Failed to delete message for everyone.");
@@ -407,6 +460,7 @@ export default function ChatScreen() {
     try {
       setMessages((prev) => prev.filter((m) => m.id !== msgId));
       await chatService.deleteMessageForMe(msgId, clerkUser.id);
+      messageStore.removeMessage(msgId).catch(() => {});
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error: any) {
       Alert.alert("Delete Error", "Failed to delete message for me.");

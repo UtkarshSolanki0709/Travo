@@ -1,5 +1,6 @@
 import { chatService, type Conversation } from "@/services/chatService";
 import { database, type User } from "@/services/database";
+import { messageStore } from "@/services/messageStore";
 import { COLORS } from "@/lib/theme";
 import { useUser } from "@clerk/expo";
 import {
@@ -56,6 +57,13 @@ export default function ChatsScreen() {
   const fetchData = useCallback(async () => {
     if (!clerkUser?.id) return;
     try {
+      // Instant open: show cached conversations while the network fetch runs
+      const cached = await messageStore.hydrateConversations();
+      if (cached.length > 0) {
+        setConversations((prev) => (prev.length === 0 ? cached : prev));
+        setLoading(false);
+      }
+
       const [convs, friendList, pendingList] = await Promise.all([
         chatService.getConversations(clerkUser.id),
         database.getFriends(clerkUser.id),
@@ -65,6 +73,7 @@ export default function ChatsScreen() {
       setConversations(convs);
       setFriends(friendList);
       setPendingRequests(pendingList);
+      messageStore.saveConversations(convs).catch(() => {});
     } catch (error) {
       console.error("fetchData error in ChatsScreen:", error);
     } finally {
