@@ -1,6 +1,6 @@
-import ActivityCard from "@/components/ActivityCard";
-import ActivityDetailsModal from "@/components/ActivityDetailsModal";
-import CreateActivityModal from "@/components/CreateActivityModal";
+import ActivityCard from "@/components/activities/ActivityCard";
+import ActivityDetailsModal from "@/components/activities/ActivityDetailsModal";
+import CreateActivityModal from "@/components/activities/CreateActivityModal";
 import { useMapContext } from "@/context/MapContext";
 import { database, type Activity } from "@/services/database";
 import { COLORS } from "@/lib/theme";

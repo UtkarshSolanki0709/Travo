@@ -1,17 +1,6 @@
-const GEOAPIFY_API_KEY = process.env.EXPO_PUBLIC_GEOAPIFY_API_KEY;
+import { fetchGeoapify } from "./geoFetch";
 
-const fetchWithTimeout = async (url: string, timeout = 10000) => {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeout);
-  try {
-    const response = await fetch(url, { signal: controller.signal });
-    clearTimeout(id);
-    return response;
-  } catch (err) {
-    clearTimeout(id);
-    throw err;
-  }
-};
+const GEOAPIFY_API_KEY = process.env.EXPO_PUBLIC_GEOAPIFY_API_KEY;
 
 export interface GeoApifyResult {
   place_id?: string;
@@ -56,18 +45,23 @@ export const searchVenues = async (
 
   try {
     // Use autocomplete for TEXT search - RECOMMENDED for search bars
-    let url = `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(query)}&type=amenity&limit=10&apiKey=${GEOAPIFY_API_KEY}`;
+    const params: Record<string, string | number> = {
+      text: query,
+      type: "amenity",
+      limit: 10,
+      apiKey: GEOAPIFY_API_KEY,
+    };
 
     if (bbox) {
       // Format: lon1,lat1,lon2,lat2
-      url += `&filter=rect:${bbox.join(",")}`;
+      params.filter = `rect:${bbox.join(",")}`;
     } else if (proximity) {
       // Use proximity bias and filter if no explicit bounding box
-      url += `&bias=proximity:${proximity.longitude},${proximity.latitude}`;
-      url += `&filter=circle:${proximity.longitude},${proximity.latitude},50000`;
+      params.bias = `proximity:${proximity.longitude},${proximity.latitude}`;
+      params.filter = `circle:${proximity.longitude},${proximity.latitude},50000`;
     }
 
-    const res = await fetchWithTimeout(url);
+    const res = await fetchGeoapify("v1/geocode/autocomplete", params);
     if (!res.ok) {
       console.error(`Geoapify autocomplete error: ${res.status}`);
       return [];
@@ -116,9 +110,12 @@ export const browseVenuesByCategory = async (
 
   try {
     // Use /v2/places for category browsing - NO text parameter
-    const url = `https://api.geoapify.com/v2/places?categories=${category}&filter=rect:${bbox.join(",")}&limit=20&apiKey=${GEOAPIFY_API_KEY}`;
-
-    const res = await fetchWithTimeout(url);
+    const res = await fetchGeoapify("v2/places", {
+      categories: category,
+      filter: `rect:${bbox.join(",")}`,
+      limit: 20,
+      apiKey: GEOAPIFY_API_KEY,
+    });
     if (!res.ok) {
       console.error(`Geoapify places v2 error: ${res.status}`);
       return [];
@@ -155,16 +152,20 @@ export const searchLocations = async (
   if (!query || query.trim().length < 2 || !GEOAPIFY_API_KEY) return [];
 
   try {
-    let url = `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(query)}&apiKey=${GEOAPIFY_API_KEY}&limit=10`;
+    const params: Record<string, string | number> = {
+      text: query,
+      apiKey: GEOAPIFY_API_KEY,
+      limit: 10,
+    };
 
     if (proximity) {
-      url += `&bias=proximity:${proximity.longitude},${proximity.latitude}`;
+      params.bias = `proximity:${proximity.longitude},${proximity.latitude}`;
     }
 
     // Prefer cities and localities
-    url += `&type=locality`;
+    params.type = "locality";
 
-    const res = await fetchWithTimeout(url);
+    const res = await fetchGeoapify("v1/geocode/autocomplete", params);
     if (!res.ok) {
       console.error(`Geoapify locations error: ${res.status}`);
       return [];
@@ -219,17 +220,21 @@ export const searchAll = async (
   if (!query || query.trim().length < 2 || !GEOAPIFY_API_KEY) return [];
 
   try {
-    let url = `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(query)}&apiKey=${GEOAPIFY_API_KEY}&limit=10`;
+    const params: Record<string, string | number> = {
+      text: query,
+      apiKey: GEOAPIFY_API_KEY,
+      limit: 10,
+    };
 
     if (proximity) {
-      url += `&bias=proximity:${proximity.longitude},${proximity.latitude}`;
+      params.bias = `proximity:${proximity.longitude},${proximity.latitude}`;
     }
 
     if (bbox) {
-      url += `&filter=rect:${bbox.join(",")}`;
+      params.filter = `rect:${bbox.join(",")}`;
     }
 
-    const res = await fetchWithTimeout(url);
+    const res = await fetchGeoapify("v1/geocode/autocomplete", params);
     if (!res.ok) {
       console.error(`Geoapify searchAll error: ${res.status}`);
       return [];
@@ -266,8 +271,11 @@ export const reverseGeocode = async (
   if (!GEOAPIFY_API_KEY) return null;
 
   try {
-    const url = `https://api.geoapify.com/v1/geocode/reverse?lat=${lat}&lon=${lon}&apiKey=${GEOAPIFY_API_KEY}`;
-    const res = await fetchWithTimeout(url);
+    const res = await fetchGeoapify("v1/geocode/reverse", {
+      lat,
+      lon,
+      apiKey: GEOAPIFY_API_KEY,
+    });
 
     if (!res.ok) {
       console.error(`Geoapify reverse geocode error: ${res.status}`);

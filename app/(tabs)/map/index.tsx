@@ -1,7 +1,7 @@
-import ActivityDetailsModal from "@/components/ActivityDetailsModal";
-import CreateActivityModal from "@/components/CreateActivityModal";
-import LocationInfoCard from "@/components/LocationInfoCard";
-import { SignOutButton } from "@/components/SignOutButton";
+import ActivityDetailsModal from "@/components/activities/ActivityDetailsModal";
+import CreateActivityModal from "@/components/activities/CreateActivityModal";
+import LocationInfoCard from "@/components/map/LocationInfoCard";
+import { SignOutButton } from "@/components/common/SignOutButton";
 import { useMapContext } from "@/context/MapContext";
 import { database, type Activity } from "@/services/database";
 import { reverseGeocode, searchAll } from "@/services/geoapify";
@@ -617,6 +617,8 @@ const MapScreen = () => {
                 onValueChange={handleToggleLocation}
                 value={isLocationEnabled}
                 disabled={!clerkUser}
+                accessibilityLabel="Toggle live tracking"
+                aria-label="Toggle live tracking"
               />
             </View>
           </View>

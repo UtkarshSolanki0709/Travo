@@ -1,9 +1,8 @@
-import CreateActivityModal from "@/components/CreateActivityModal";
+import CreateActivityModal from "@/components/activities/CreateActivityModal";
 import { database, type Activity } from "@/services/database";
 import { useUser } from "@clerk/expo";
-import { X, Calendar, MapPin, Edit3, Trash2, Check, User as UserIcon } from "lucide-react-native";
+import { X, Calendar, MapPin, Edit3, Trash2, Check } from "lucide-react-native";
 import { COLORS } from "@/lib/theme";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format } from "date-fns";
 import { useCallback, useEffect, useState } from "react";
 import {

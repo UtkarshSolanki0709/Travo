@@ -1,7 +1,7 @@
 import { useClerk } from "@clerk/expo"
 import { useRouter } from 'expo-router'
 import { Text, TouchableOpacity } from 'react-native'
-import '../global.css';
+import '@/global.css';
 
 export const SignOutButton = () => {
   // Use `useClerk()` to access the `signOut()` function

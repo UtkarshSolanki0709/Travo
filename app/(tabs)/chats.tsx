@@ -515,6 +515,7 @@ export default function ChatsScreen() {
                   onChangeText={handleSearchUsers}
                   placeholder="Search by username or display name..."
                   autoCapitalize="none"
+                  aria-label="Search users"
                 />
               </View>
 

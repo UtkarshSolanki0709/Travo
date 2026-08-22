@@ -11,7 +11,7 @@ import {
 import { useSignUp } from "@clerk/expo/legacy";
 import { useOAuth, useUser } from "@clerk/expo";
 import { Link, useRouter } from 'expo-router';
-import { Send, AlertCircle, KeyRound, User as UserIcon, Mail, Lock } from 'lucide-react-native';
+import { Send, AlertCircle } from 'lucide-react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { useWarmUpBrowser } from '../../hooks/useWarmUpBrowser';
@@ -147,6 +147,7 @@ export default function SignUpScreen() {
                 <View className="mb-6">
                   <Input
                     label="Verification Code"
+                    aria-label="Verification Code"
                     value={code}
                     placeholder="Enter 6-digit code"
                     onChangeText={setCode}
@@ -180,6 +181,7 @@ export default function SignUpScreen() {
                 <View className="mb-4">
                   <Input
                     label="Username"
+                    aria-label="Username"
                     autoCapitalize="none"
                     value={username}
                     placeholder="Choose a username"
@@ -190,6 +192,7 @@ export default function SignUpScreen() {
                 <View className="mb-4">
                   <Input
                     label="Email address"
+                    aria-label="Email address"
                     autoCapitalize="none"
                     value={emailAddress}
                     placeholder="Enter your email"
@@ -201,6 +204,7 @@ export default function SignUpScreen() {
                 <View className="mb-6">
                   <Input
                     label="Password"
+                    aria-label="Password"
                     value={password}
                     placeholder="Create a password"
                     secureTextEntry

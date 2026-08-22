@@ -34,6 +34,8 @@ const Input = React.forwardRef<React.ElementRef<typeof TextInput>, InputProps>(
           <TextInput
             ref={ref}
             editable={editable}
+            accessibilityLabel={label}
+            aria-label={label}
             placeholderTextColor={placeholderTextColor || COLORS.textSecondary}
             onFocus={(e) => {
               setIsFocused(true);
@@ -46,7 +48,7 @@ const Input = React.forwardRef<React.ElementRef<typeof TextInput>, InputProps>(
             className={cn(
               'flex-1 text-body-md text-foreground font-body py-2.5',
               Platform.select({
-                web: 'outline-none selection:bg-primary selection:text-white',
+                web: 'outline-0 selection:bg-primary selection:text-white',
               })
             )}
             {...props}

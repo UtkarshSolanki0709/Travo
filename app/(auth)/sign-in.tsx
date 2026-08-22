@@ -11,7 +11,7 @@ import {
   ImageBackground,
 } from 'react-native';
 import React from 'react';
-import { Send, Mail, Lock, AlertCircle } from 'lucide-react-native';
+import { Send, AlertCircle } from 'lucide-react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { useWarmUpBrowser } from '../../hooks/useWarmUpBrowser';
@@ -119,6 +119,7 @@ export default function Page() {
             <View className="mb-4">
               <Input
                 label="Email address"
+                aria-label="Email address"
                 autoCapitalize="none"
                 value={emailAddress}
                 placeholder="Enter your email"
@@ -130,6 +131,7 @@ export default function Page() {
             <View className="mb-6">
               <Input
                 label="Password"
+                aria-label="Password"
                 value={password}
                 placeholder="Enter your password"
                 secureTextEntry

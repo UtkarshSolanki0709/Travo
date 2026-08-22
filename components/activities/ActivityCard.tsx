@@ -139,16 +139,18 @@ export default function ActivityCard({
           </View>
 
           {/* Join Status Badge */}
-          {isJoined && (
-            <Badge variant="secondary">
-              <Text className="text-body-sm font-body">Joined</Text>
-            </Badge>
-          )}
-          {isPending && (
-            <Badge variant="accent">
-              <Text className="text-body-sm font-body">Pending</Text>
-            </Badge>
-          )}
+          <View accessibilityRole="summary" accessibilityLiveRegion="polite" role="status" aria-live="polite">
+            {isJoined && (
+              <Badge variant="secondary">
+                <Text className="text-body-sm font-body">Joined</Text>
+              </Badge>
+            )}
+            {isPending && (
+              <Badge variant="accent">
+                <Text className="text-body-sm font-body">Pending</Text>
+              </Badge>
+            )}
+          </View>
         </View>
 
         {/* Interests Tags */}

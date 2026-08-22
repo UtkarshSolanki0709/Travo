@@ -23,6 +23,7 @@ export default function EditProfileForm({
       <View className="mb-3">
         <Input
           label="Display Name"
+          aria-label="Display Name"
           placeholder="Display Name"
           value={editingData.display_name || ''}
           onChangeText={(text) => onDataChange({ ...editingData, display_name: text })}
@@ -32,6 +33,7 @@ export default function EditProfileForm({
       <View className="mb-3">
         <Input
           label="Bio"
+          aria-label="Bio"
           placeholder="Tell travelers about yourself..."
           multiline
           numberOfLines={3}
@@ -46,6 +48,7 @@ export default function EditProfileForm({
         <View className="flex-1">
           <Input
             label="City"
+            aria-label="City"
             placeholder="City"
             value={editingData.city || ''}
             onChangeText={(text) => onDataChange({ ...editingData, city: text })}
@@ -54,6 +57,7 @@ export default function EditProfileForm({
         <View className="flex-1">
           <Input
             label="Country"
+            aria-label="Country"
             placeholder="Country"
             value={editingData.country || ''}
             onChangeText={(text) => onDataChange({ ...editingData, country: text })}

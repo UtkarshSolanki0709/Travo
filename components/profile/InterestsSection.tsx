@@ -34,6 +34,7 @@ export default function InterestsSection({
         <View className="flex-1">
           <Input
             placeholder="Add your own interest..."
+            aria-label="Add custom interest"
             value={customInterest}
             onChangeText={onCustomInterestChange}
             onSubmitEditing={onAddCustomInterest}
@@ -43,6 +44,8 @@ export default function InterestsSection({
           variant="default"
           size="icon"
           onPress={onAddCustomInterest}
+          accessibilityLabel="Add custom interest"
+          aria-label="Add custom interest"
         >
           <Plus size={20} color="#fff" />
         </Button>

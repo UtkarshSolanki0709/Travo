@@ -17,7 +17,6 @@ import {
   Edit3,
   Trash2,
   Ban,
-  Image as ImageIcon,
   Film,
 } from "lucide-react-native";
 import { format } from "date-fns";
@@ -509,6 +508,8 @@ export default function ChatScreen() {
                   source={{ uri: item.media_url }}
                   className="w-56 h-40 rounded-radius-md"
                   resizeMode="cover"
+                  accessibilityLabel="Shared photo"
+                  alt="Shared photo"
                 />
               )}
             </View>

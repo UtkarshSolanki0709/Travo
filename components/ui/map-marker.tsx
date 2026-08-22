@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Svg, { Polygon, Circle, G } from 'react-native-svg';
+import Svg, { Polygon } from 'react-native-svg';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,

@@ -11,16 +11,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Alert, ImageBackground, ScrollView, View } from "react-native";
 import { Image as ImageIcon, UserPlus } from "lucide-react-native";
 
-import CreatePostModal from "@/components/CreatePostModal";
-import EditPostModal from "@/components/EditPostModal";
-import EditProfileForm from "@/components/EditProfileForm";
-import InterestsSection from "@/components/InterestsSection";
-import LoggedOutView from "@/components/LoggedOutView";
-import PostDetailModal from "@/components/PostDetailModal";
-import PostsGrid from "@/components/PostsGrid";
-import PostsTabs from "@/components/PostsTabs";
-import ProfileHeader from "@/components/ProfileHeader";
-import LegalPrivacyModal from "@/components/LegalPrivacyModal";
+import CreatePostModal from "@/components/community/CreatePostModal";
+import EditPostModal from "@/components/community/EditPostModal";
+import EditProfileForm from "@/components/profile/EditProfileForm";
+import InterestsSection from "@/components/profile/InterestsSection";
+import LoggedOutView from "@/components/common/LoggedOutView";
+import PostDetailModal from "@/components/community/PostDetailModal";
+import PostsGrid from "@/components/community/PostsGrid";
+import PostsTabs from "@/components/community/PostsTabs";
+import ProfileHeader from "@/components/profile/ProfileHeader";
+import LegalPrivacyModal from "@/components/common/LegalPrivacyModal";
 
 export default function ProfileScreen() {
   const { user: clerkUser } = useUser();

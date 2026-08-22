@@ -13,13 +13,17 @@ import { ThemeProvider } from "@react-navigation/native";
 import { PortalHost } from "@rn-primitives/portal";
 import { useFonts } from "expo-font";
 import { Slot, useRouter, useSegments } from "expo-router";
+import Head from "expo-router/head";
 import * as SplashScreen from "expo-splash-screen";
 import { useCallback, useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import "react-native-url-polyfill/auto";
+import { ErrorBoundary } from "@/components/common/ErrorBoundary";
+import { ToastProvider } from "../components/ui/ToastProvider";
 import { MapProvider } from "../context/MapContext";
 import "../global.css";
+import { useThemeHotkey } from "../hooks/useThemeHotkey";
 import { COLORS, NAV_THEME } from "../lib/theme";
 import { database } from "../services/database";
 
@@ -85,6 +89,8 @@ function InitialLayout() {
 }
 
 export default function RootLayout() {
+  useThemeHotkey();
+
   const [fontsLoaded, fontError] = useFonts({
     Poppins_700Bold,
     Poppins_800ExtraBold,
@@ -104,20 +110,28 @@ export default function RootLayout() {
   }
 
   return (
-    <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
-      <ThemeProvider value={NAV_THEME}>
-        <ClerkProvider
-          publishableKey={CLERK_PUBLISHABLE_KEY || ""}
-          tokenCache={tokenCache}
-        >
-          <KeyboardProvider>
-            <MapProvider>
-              <InitialLayout />
-              <PortalHost />
-            </MapProvider>
-          </KeyboardProvider>
-        </ClerkProvider>
-      </ThemeProvider>
-    </View>
+    <ErrorBoundary>
+      <Head>
+        <title>Travo — Travel Together</title>
+        <meta name="description" content="Discover and join travel activities with people who share your interests. Plan trips, explore maps, and connect with fellow travelers." />
+      </Head>
+      <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+        <ThemeProvider value={NAV_THEME}>
+          <ClerkProvider
+            publishableKey={CLERK_PUBLISHABLE_KEY || ""}
+            tokenCache={tokenCache}
+          >
+            <KeyboardProvider>
+              <MapProvider>
+                <ToastProvider>
+                  <InitialLayout />
+                  <PortalHost />
+                </ToastProvider>
+              </MapProvider>
+            </KeyboardProvider>
+          </ClerkProvider>
+        </ThemeProvider>
+      </View>
+    </ErrorBoundary>
   );
 }

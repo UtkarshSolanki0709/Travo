@@ -1,19 +1,8 @@
+import { fetchGeoapify } from "./geoFetch";
+
 export type LatLng = { latitude: number; longitude: number };
 
 const GEOAPIFY_API_KEY = process.env.EXPO_PUBLIC_GEOAPIFY_API_KEY;
-
-const fetchWithTimeout = async (url: string, timeout = 10000) => {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeout);
-  try {
-    const response = await fetch(url, { signal: controller.signal });
-    clearTimeout(id);
-    return response;
-  } catch (err) {
-    clearTimeout(id);
-    throw err;
-  }
-};
 
 export async function getRoute(
   origin: LatLng,
@@ -32,9 +21,12 @@ export async function getRoute(
     const originStr = `${origin.latitude},${origin.longitude}`;
     const destStr = `${destination.latitude},${destination.longitude}`;
 
-    const url = `https://api.geoapify.com/v1/routing?waypoints=${originStr}|${destStr}&mode=drive&traffic=approximated&apiKey=${GEOAPIFY_API_KEY}`;
-
-    const res = await fetchWithTimeout(url);
+    const res = await fetchGeoapify("v1/routing", {
+      waypoints: `${originStr}|${destStr}`,
+      mode: "drive",
+      traffic: "approximated",
+      apiKey: GEOAPIFY_API_KEY,
+    });
 
     if (!res.ok) {
       console.error("Failed to fetch route from Geoapify", res.status);
