@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useSignUp } from "@clerk/expo/legacy";
 import { useOAuth, useUser } from "@clerk/expo";
+import { analytics } from "@/services/analytics";
 import { Link, useRouter } from 'expo-router';
 import { Send, AlertCircle } from 'lucide-react-native';
 import * as WebBrowser from 'expo-web-browser';
@@ -71,6 +72,7 @@ export default function SignUpScreen() {
 
       if (signUpAttempt.status === 'complete') {
         await setActive({ session: signUpAttempt.createdSessionId });
+        void analytics.track('sign_up', { method: 'email' });
         router.replace('/');
       } else {
         console.error(JSON.stringify(signUpAttempt, null, 2));
@@ -96,6 +98,7 @@ export default function SignUpScreen() {
 
       if (createdSessionId) {
         await setActive!({ session: createdSessionId });
+        void analytics.track('sign_up', { method: 'google' });
         router.replace('/');
       }
     } catch (err: any) {

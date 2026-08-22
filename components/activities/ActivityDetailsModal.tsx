@@ -1,5 +1,6 @@
 import CreateActivityModal from "@/components/activities/CreateActivityModal";
 import { database, type Activity } from "@/services/database";
+import { analytics } from "@/services/analytics";
 import { useUser } from "@clerk/expo";
 import { X, Calendar, MapPin, Edit3, Trash2, Check } from "lucide-react-native";
 import { COLORS } from "@/lib/theme";
@@ -88,6 +89,9 @@ export default function ActivityDetailsModal({
     setActionLoading(true);
     try {
       await database.requestToJoinActivity(activity.id, clerkUser.id);
+      void analytics.track("activity_join_requested", {
+        activity_id: activity.id,
+      });
       Alert.alert(
         "Request Sent",
         "Your request to join has been sent to the admin.",

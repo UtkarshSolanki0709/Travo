@@ -1,5 +1,6 @@
 import { useSignIn } from "@clerk/expo/legacy";
 import { useOAuth, useUser } from "@clerk/expo";
+import { analytics } from "@/services/analytics";
 import { Link, useRouter } from 'expo-router';
 import {
   Text,
@@ -47,6 +48,7 @@ export default function Page() {
 
       if (signInAttempt.status === 'complete') {
         await setActive({ session: signInAttempt.createdSessionId });
+        void analytics.track('sign_in', { method: 'password' });
         router.replace('/');
       } else {
         console.error(JSON.stringify(signInAttempt, null, 2));
@@ -72,6 +74,7 @@ export default function Page() {
 
       if (createdSessionId) {
         await setActive!({ session: createdSessionId });
+        void analytics.track('sign_in', { method: 'google' });
         router.replace('/');
       }
     } catch (err: any) {

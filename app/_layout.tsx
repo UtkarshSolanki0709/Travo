@@ -18,8 +18,8 @@ import { useFonts } from "expo-font";
 import { Slot, useRouter, useSegments } from "expo-router";
 import Head from "expo-router/head";
 import * as SplashScreen from "expo-splash-screen";
-import { useCallback, useEffect } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { useCallback, useEffect, useRef } from "react";
+import { ActivityIndicator, AppState, View } from "react-native";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import "react-native-url-polyfill/auto";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
@@ -29,6 +29,7 @@ import "../global.css";
 import { useThemeHotkey } from "../hooks/useThemeHotkey";
 import { COLORS, NAV_THEME } from "../lib/theme";
 import { database } from "../services/database";
+import { analytics } from "../services/analytics";
 // Importing the task module both binds LOCATION_TASK_NAME and registers the
 // background task definition with TaskManager (must run once at startup).
 import { LOCATION_TASK_NAME } from "../services/locationTask";
@@ -48,6 +49,22 @@ function InitialLayout() {
   const { user } = useUser();
   const segments = useSegments();
   const router = useRouter();
+  const trackedAppOpen = useRef(false);
+
+  // Analytics: identify the user, log app_open once, flush on foreground
+  useEffect(() => {
+    if (!isLoaded) return;
+    analytics.setUser(isSignedIn ? user?.id ?? null : null);
+    if (!trackedAppOpen.current) {
+      trackedAppOpen.current = true;
+      void analytics.track("app_open");
+    }
+    void analytics.flush();
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") void analytics.flush();
+    });
+    return () => sub.remove();
+  }, [isLoaded, isSignedIn, user?.id]);
 
   useEffect(() => {
     if (!isLoaded) return;

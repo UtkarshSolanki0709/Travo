@@ -44,3 +44,6 @@ app-example
 /android
 .agents
 skills-lock.json
+
+# mimosa scan state
+.mimosa/

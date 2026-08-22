@@ -5,6 +5,7 @@ import {
   type ActivityVisibility,
 } from "@/services/database";
 import { useUser } from "@clerk/expo";
+import { analytics } from "@/services/analytics";
 import {
   X,
   MapPin,
@@ -235,6 +236,10 @@ export default function CreateActivityModal({
         });
 
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        void analytics.track("activity_created", {
+          size_type: sizeType,
+          visibility,
+        });
         onClose();
         if (onActivityCreated) onActivityCreated();
       }

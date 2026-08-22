@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { AppState } from "react-native";
 import { flushOutbox } from "@/services/outbox";
 import { socketService } from "@/services/socketService";
+import { analytics } from "@/services/analytics";
 
 export default function TabLayout() {
   const { user } = useUser();
@@ -30,6 +31,15 @@ export default function TabLayout() {
   return (
     <Tabs
       tabBar={(props) => <CustomTabBar {...props} />}
+      screenListeners={{
+        state: (e) => {
+          const state = e.data?.state;
+          const route = state?.routes?.[state.index ?? 0];
+          if (route?.name) {
+            void analytics.track("tab_view", { tab: route.name });
+          }
+        },
+      }}
       screenOptions={{
         headerShown: false,
         freezeOnBlur: true,

@@ -16,6 +16,7 @@ import * as SecureStore from "expo-secure-store";
 import debounce from "lodash.debounce";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LOCATION_TASK_NAME } from "@/services/locationTask";
+import { analytics } from "@/services/analytics";
 
 import {
   FlatList,
@@ -147,6 +148,7 @@ const MapScreen = () => {
             is_live_tracking: true,
             interests: interestsRef.current || [],
           });
+          void analytics.track("tracking_toggled", { enabled: true });
 
           // Background journey sharing. Graceful degradation: if the user
           // denies "Always", the foreground watch above keeps working.
@@ -185,6 +187,7 @@ const MapScreen = () => {
             is_live_tracking: false,
             interests: interestsRef.current || [],
           });
+          void analytics.track("tracking_toggled", { enabled: false });
           await SecureStore.deleteItemAsync("current_user_id");
           await SecureStore.deleteItemAsync("user_interests");
         }

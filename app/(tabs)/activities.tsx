@@ -3,6 +3,7 @@ import ActivityDetailsModal from "@/components/activities/ActivityDetailsModal";
 import CreateActivityModal from "@/components/activities/CreateActivityModal";
 import { useMapContext } from "@/context/MapContext";
 import { database, type Activity } from "@/services/database";
+import { analytics } from "@/services/analytics";
 import { COLORS } from "@/lib/theme";
 import { useUser } from "@clerk/expo";
 import { MapPin, PlusCircle, Users, ChevronRight } from "lucide-react-native";
@@ -149,6 +150,7 @@ const ActivitiesScreen = () => {
   };
 
   const handleActivityPress = (activity: Activity) => {
+    void analytics.track("activity_viewed", { activity_id: activity.id });
     setSelectedActivity(activity);
   };
 

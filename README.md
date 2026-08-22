@@ -167,6 +167,7 @@ Travo relies on a relational PostgreSQL database powered by **Supabase**. The co
 | **`activities`** | Traveler meetups & events | `id`, `creator_id`, `title`, `size_type`, `visibility`, `latitude`, `longitude`, `status` |
 | **`posts`** | Social media feed items | `id`, `author_id`, `text`, `media_url`, `media_type`, `venue_name`, `location_name` |
 | **`post_comments`**| Discussion comments on travel posts | `id`, `post_id`, `author_id`, `text`, `created_at` |
+| **`analytics_events`** | Product analytics events (batched from the app's local SQLite queue — see `supabase/migrations/`) | `id`, `user_id`, `name`, `props`, `created_at` |
 
 ---
 

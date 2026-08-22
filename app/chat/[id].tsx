@@ -45,6 +45,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { messageStore } from "@/services/messageStore";
+import { analytics } from "@/services/analytics";
 
 export default function ChatScreen() {
   const { id: conversationId } = useLocalSearchParams<{ id: string }>();
@@ -319,6 +320,7 @@ export default function ChatScreen() {
       }
 
       socketService.emitSendMessage(sentMsg);
+      void analytics.track("message_sent", { type: "text" });
 
       setMessages((prev) =>
         prev.map((m) => (m.client_temp_id === tempId ? sentMsg : m)),
@@ -380,6 +382,7 @@ export default function ChatScreen() {
       }
 
       socketService.emitSendMessage(sentMsg);
+      void analytics.track("message_sent", { type: sentMsg.media_type ?? "media" });
       setInputText("");
       mergeMessages([sentMsg]);
       messageStore.saveMessage(sentMsg).catch(() => {});
@@ -445,7 +448,8 @@ export default function ChatScreen() {
       await chatService.deleteMessageForEveryone(msgId, clerkUser.id, conversationId);
       messageStore.markDeleted(msgId).catch(() => {});
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (error: any) {
+    } catch (error) {
+      console.error("Delete for everyone failed:", error);
       Alert.alert("Delete Error", "Failed to delete message for everyone.");
       fetchMessages();
     }
@@ -462,7 +466,8 @@ export default function ChatScreen() {
       await chatService.deleteMessageForMe(msgId, clerkUser.id);
       messageStore.removeMessage(msgId).catch(() => {});
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (error: any) {
+    } catch (error) {
+      console.error("Delete for me failed:", error);
       Alert.alert("Delete Error", "Failed to delete message for me.");
       fetchMessages();
     }
