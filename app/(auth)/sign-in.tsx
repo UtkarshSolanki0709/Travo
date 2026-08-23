@@ -6,14 +6,12 @@ import {
   Text,
   TouchableOpacity,
   View,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
   ImageBackground,
 } from 'react-native';
 import React from 'react';
 import { Send, AlertCircle } from 'lucide-react-native';
 import * as AuthSession from 'expo-auth-session';
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useWarmUpBrowser } from '../../hooks/useWarmUpBrowser';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -136,125 +134,130 @@ export default function Page() {
   }, [isSignedIn, router, startSSOFlow]);
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    <ImageBackground
+      source={require('@/assets/textures/paper-texture.png')}
+      imageStyle={{ opacity: 0.05 }}
       className="flex-1 bg-background"
     >
-      <ImageBackground
-        source={require('@/assets/textures/paper-texture.png')}
-        imageStyle={{ opacity: 0.05 }}
-        className="flex-1"
+      <KeyboardAwareScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingHorizontal: 24,
+          paddingTop: 48,
+          paddingBottom: 60,
+        }}
+        bottomOffset={80}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView contentContainerClassName="flex-grow justify-center px-6 py-10">
-          <View className="items-center mb-8">
-            <View className="h-16 w-16 items-center justify-center rounded-radius-lg bg-primary/10 mb-4 border border-primary/20">
-              <Send size={32} color={COLORS.primary} />
+        <View className="items-center mb-8">
+          <View className="h-16 w-16 items-center justify-center rounded-radius-lg bg-primary/10 mb-4 border border-primary/20">
+            <Send size={32} color={COLORS.primary} />
+          </View>
+          <Text className="text-display-xl font-display text-foreground text-center">
+            Travo
+          </Text>
+          <Text className="mt-2 text-center text-body-md text-muted-foreground font-body">
+            Welcome back! Please sign in to continue.
+          </Text>
+        </View>
+
+        <Card className="p-6">
+          {error ? (
+            <View className="mb-4 flex-row items-start rounded-radius-md bg-destructive/10 p-3 border border-destructive/20">
+              <AlertCircle size={18} color={COLORS.destructive} className="mr-2 mt-0.5" />
+              <Text className="text-body-sm text-destructive font-body flex-1">{error}</Text>
             </View>
-            <Text className="text-display-xl font-display text-foreground text-center">
-              Travo
-            </Text>
-            <Text className="mt-2 text-center text-body-md text-muted-foreground font-body">
-              Welcome back! Please sign in to continue.
-            </Text>
+          ) : null}
+
+          <View className="mb-4">
+            <Input
+              label="Email or Username"
+              aria-label="Email or Username"
+              autoCapitalize="none"
+              value={emailAddress}
+              placeholder="Enter your email or username"
+              onChangeText={setEmailAddress}
+            />
           </View>
 
-          <Card className="p-6">
-            {error ? (
-              <View className="mb-4 flex-row items-start rounded-radius-md bg-destructive/10 p-3 border border-destructive/20">
-                <AlertCircle size={18} color={COLORS.destructive} className="mr-2 mt-0.5" />
-                <Text className="text-body-sm text-destructive font-body flex-1">{error}</Text>
-              </View>
-            ) : null}
+          <View className="mb-6">
+            <Input
+              label="Password"
+              aria-label="Password"
+              value={password}
+              placeholder="Enter your password"
+              secureTextEntry
+              onChangeText={setPassword}
+            />
+          </View>
 
-            <View className="mb-4">
-              <Input
-                label="Email or Username"
-                aria-label="Email or Username"
-                autoCapitalize="none"
-                value={emailAddress}
-                placeholder="Enter your email or username"
-                onChangeText={setEmailAddress}
-              />
-            </View>
+          <Button
+            onPress={onSignInPress}
+            loading={loading}
+            variant="default"
+            size="lg"
+            className="w-full"
+          >
+            <Text className="text-body-md font-semibold text-white font-body">
+              Sign In
+            </Text>
+          </Button>
 
-            <View className="mb-6">
-              <Input
-                label="Password"
-                aria-label="Password"
-                value={password}
-                placeholder="Enter your password"
-                secureTextEntry
-                onChangeText={setPassword}
-              />
-            </View>
+          <View className="my-5 flex-row items-center">
+            <View className="h-px flex-1 bg-border" />
+            <Text className="mx-3 text-body-sm font-medium text-muted-foreground font-body">
+              OR
+            </Text>
+            <View className="h-px flex-1 bg-border" />
+          </View>
 
-            <Button
-              onPress={onSignInPress}
-              loading={loading}
-              variant="default"
-              size="lg"
-              className="w-full"
-            >
-              <Text className="text-body-md font-semibold text-white font-body">
-                Sign In
-              </Text>
-            </Button>
+          <Button
+            onPress={onGoogleSignInPress}
+            variant="secondary"
+            size="lg"
+            className="w-full"
+          >
+            <Text className="text-body-md font-semibold text-primary font-body">
+              Continue with Google
+            </Text>
+          </Button>
 
-            <View className="my-5 flex-row items-center">
-              <View className="h-px flex-1 bg-border" />
-              <Text className="mx-3 text-body-sm font-medium text-muted-foreground font-body">
-                OR
-              </Text>
-              <View className="h-px flex-1 bg-border" />
-            </View>
+          <View className="mt-5 flex-row flex-wrap items-center justify-center">
+            <Text className="text-body-sm text-muted-foreground font-body">
+              By continuing, you agree to our
+            </Text>
+            <Link href="/legal/terms" asChild>
+              <TouchableOpacity>
+                <Text className="mx-1 text-body-sm font-semibold text-primary font-body">
+                  Terms of Service
+                </Text>
+              </TouchableOpacity>
+            </Link>
+            <Text className="text-body-sm text-muted-foreground font-body">and</Text>
+            <Link href="/legal/privacy" asChild>
+              <TouchableOpacity>
+                <Text className="mx-1 text-body-sm font-semibold text-primary font-body">
+                  Privacy Policy
+                </Text>
+              </TouchableOpacity>
+            </Link>
+          </View>
 
-            <Button
-              onPress={onGoogleSignInPress}
-              variant="secondary"
-              size="lg"
-              className="w-full"
-            >
-              <Text className="text-body-md font-semibold text-primary font-body">
-                Continue with Google
-              </Text>
-            </Button>
-
-            <View className="mt-5 flex-row flex-wrap items-center justify-center">
-              <Text className="text-body-sm text-muted-foreground font-body">
-                By continuing, you agree to our
-              </Text>
-              <Link href="/legal/terms" asChild>
-                <TouchableOpacity>
-                  <Text className="mx-1 text-body-sm font-semibold text-primary font-body">
-                    Terms of Service
-                  </Text>
-                </TouchableOpacity>
-              </Link>
-              <Text className="text-body-sm text-muted-foreground font-body">and</Text>
-              <Link href="/legal/privacy" asChild>
-                <TouchableOpacity>
-                  <Text className="mx-1 text-body-sm font-semibold text-primary font-body">
-                    Privacy Policy
-                  </Text>
-                </TouchableOpacity>
-              </Link>
-            </View>
-
-            <View className="mt-6 flex-row items-center justify-center">
-              <Text className="text-body-sm text-muted-foreground font-body">
-                Don&apos;t have an account?
-              </Text>
-              <Link href="/sign-up" asChild>
-                <TouchableOpacity>
-                  <Text className="ml-2 text-body-sm font-semibold text-primary font-body">
-                    Sign up
-                  </Text>
-                </TouchableOpacity>
-              </Link>
-            </View>
-          </Card>
-        </ScrollView>
-      </ImageBackground>
-    </KeyboardAvoidingView>
+          <View className="mt-6 flex-row items-center justify-center">
+            <Text className="text-body-sm text-muted-foreground font-body">
+              Don&apos;t have an account?
+            </Text>
+            <Link href="/sign-up" asChild>
+              <TouchableOpacity>
+                <Text className="ml-2 text-body-sm font-semibold text-primary font-body">
+                  Sign up
+                </Text>
+              </TouchableOpacity>
+            </Link>
+          </View>
+        </Card>
+      </KeyboardAwareScrollView>
+    </ImageBackground>
   );
 }

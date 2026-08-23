@@ -863,26 +863,26 @@ export const database = {
   },
 
   /**
-   * Delete an activity
+   * Delete an activity (with optional creator ownership check)
    */
-  async deleteActivity(activityId: string) {
-    const { error } = await supabase
-      .from("activities")
-      .delete()
-      .eq("id", activityId);
-
+  async deleteActivity(activityId: string, userId?: string) {
+    let query = supabase.from("activities").delete().eq("id", activityId);
+    if (userId) {
+      query = query.eq("creator_id", userId);
+    }
+    const { error } = await query;
     if (error) throw error;
   },
 
   /**
-   * Update an existing activity
+   * Update an existing activity (with optional creator ownership check)
    */
-  async updateActivity(id: string, updates: Partial<Activity>) {
-    const { error } = await supabase
-      .from("activities")
-      .update(updates)
-      .eq("id", id);
-
+  async updateActivity(id: string, updates: Partial<Activity>, userId?: string) {
+    let query = supabase.from("activities").update(updates).eq("id", id);
+    if (userId) {
+      query = query.eq("creator_id", userId);
+    }
+    const { error } = await query;
     if (error) throw error;
   },
 

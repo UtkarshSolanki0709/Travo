@@ -28,11 +28,13 @@ export const uploadToCloudinary = async (
     );
   }
 
-  console.log("--- Cloudinary Upload Debug ---");
-  console.log("Using Preset:", uploadPreset);
-  console.log("Using Cloud Name:", cloudName);
-  console.log("Resource Type:", resourceType);
-  console.log("File URI:", fileUri.substring(0, 30) + "...");
+  if (__DEV__) {
+    console.log("--- Cloudinary Upload Debug ---");
+    console.log("Using Preset:", uploadPreset);
+    console.log("Using Cloud Name:", cloudName);
+    console.log("Resource Type:", resourceType);
+    console.log("File URI:", fileUri.substring(0, 30) + "...");
+  }
 
   // Handle file name and extension
   const MIME_TYPES: Record<string, string> = {
