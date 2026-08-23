@@ -67,20 +67,33 @@ export default function SignUpScreen() {
 
     try {
       const signUpAttempt = await signUp.attemptEmailAddressVerification({
-        code,
+        code: code.trim(),
       });
 
-      if (signUpAttempt.status === 'complete') {
+      if (signUpAttempt.createdSessionId) {
         await setActive({ session: signUpAttempt.createdSessionId });
         void analytics.track('sign_up', { method: 'email' });
         router.replace('/');
+      } else if (signUpAttempt.status === 'complete') {
+        if (signUp.createdSessionId) {
+          await setActive({ session: signUp.createdSessionId });
+        }
+        router.replace('/');
       } else {
         console.error(JSON.stringify(signUpAttempt, null, 2));
-        setError('Verification incomplete. Please check the code.');
+        setError('Verification incomplete. Please check the code or try again.');
       }
     } catch (err: any) {
       console.error(JSON.stringify(err, null, 2));
-      setError(err.errors?.[0]?.message || 'An error occurred during verification.');
+      const msg = err.errors?.[0]?.message || err.message || '';
+      if (msg.toLowerCase().includes('already verified') && signUp.createdSessionId) {
+        try {
+          await setActive({ session: signUp.createdSessionId });
+          router.replace('/');
+          return;
+        } catch {}
+      }
+      setError(msg || 'An error occurred during verification.');
     } finally {
       setLoading(false);
     }
