@@ -1,9 +1,9 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
+import { config } from "@/lib/config";
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = (process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
-  process.env.EXPO_PUBLIC_SUPABASE_KEY)!;
+const supabaseUrl = config.supabaseUrl!;
+const supabaseAnonKey = config.supabaseAnonKey!;
 
 const storage = AsyncStorage;
 

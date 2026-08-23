@@ -1,6 +1,7 @@
+import { config } from "@/lib/config";
 import { io, Socket } from "socket.io-client";
 
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+const BACKEND_URL = config.backendUrl;
 
 let socket: Socket | null = null;
 let currentConnectedUserId: string | null = null;

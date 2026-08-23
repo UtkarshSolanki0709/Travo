@@ -1,6 +1,7 @@
+import { config } from "@/lib/config";
 import { fetchGeoapify } from "./geoFetch";
 
-const GEOAPIFY_API_KEY = process.env.EXPO_PUBLIC_GEOAPIFY_API_KEY;
+const GEOAPIFY_API_KEY = config.geoapifyKey;
 
 export interface GeoApifyResult {
   place_id?: string;

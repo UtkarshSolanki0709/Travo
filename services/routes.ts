@@ -1,8 +1,9 @@
+import { config } from "@/lib/config";
 import { fetchGeoapify } from "./geoFetch";
 
 export type LatLng = { latitude: number; longitude: number };
 
-const GEOAPIFY_API_KEY = process.env.EXPO_PUBLIC_GEOAPIFY_API_KEY;
+const GEOAPIFY_API_KEY = config.geoapifyKey;
 
 export async function getRoute(
   origin: LatLng,

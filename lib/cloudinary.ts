@@ -1,9 +1,10 @@
 import { Cloudinary } from "@cloudinary/url-gen";
 // // import { upload } from "cloudinary-react-native";
+import { config } from "@/lib/config";
 
 export const cld = new Cloudinary({
   cloud: {
-    cloudName: process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME,
+    cloudName: config.cloudinaryCloudName,
   },
   url: {
     secure: true,
@@ -14,14 +15,14 @@ export const uploadToCloudinary = async (
   fileUri: string,
   resourceType: "image" | "video" = "image",
 ) => {
-  const cloudName = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME;
+  const cloudName = config.cloudinaryCloudName;
   if (!cloudName) {
     throw new Error(
       "Cloudinary cloud name is not defined in environment variables",
     );
   }
 
-  const uploadPreset = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+  const uploadPreset = config.cloudinaryUploadPreset;
   if (!uploadPreset) {
     throw new Error(
       "Cloudinary upload preset is not defined in environment variables",
