@@ -894,12 +894,13 @@ export const database = {
    * Search users by username or display name
    */
   async searchUsers(query: string, currentUserId: string): Promise<User[]> {
-    if (!query.trim()) return [];
+    const cleanQuery = query.trim().replace(/[,.()%\\]/g, "");
+    if (!cleanQuery) return [];
     const { data, error } = await supabase
       .from("users")
       .select("*")
       .neq("id", currentUserId)
-      .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
+      .or(`username.ilike.%${cleanQuery}%,display_name.ilike.%${cleanQuery}%`)
       .limit(20);
 
     if (error) throw error;

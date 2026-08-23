@@ -8,26 +8,23 @@ import {
   ScrollView,
   ImageBackground,
 } from 'react-native';
-import { useSignUp } from "@clerk/expo/legacy";
-import { useOAuth, useUser } from "@clerk/expo";
+import { useSignUp, useSSO, useUser } from "@clerk/expo";
 import { analytics } from "@/services/analytics";
 import { Link, useRouter } from 'expo-router';
+import type { Href } from 'expo-router';
 import { Send, AlertCircle } from 'lucide-react-native';
-import * as WebBrowser from 'expo-web-browser';
-import * as Linking from 'expo-linking';
+import * as AuthSession from 'expo-auth-session';
 import { useWarmUpBrowser } from '../../hooks/useWarmUpBrowser';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { COLORS } from '@/lib/theme';
 
-WebBrowser.maybeCompleteAuthSession();
-
 export default function SignUpScreen() {
   useWarmUpBrowser();
-  const { isLoaded, signUp, setActive } = useSignUp();
+  const { signUp } = useSignUp();
   const { isSignedIn } = useUser();
-  const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' });
+  const { startSSOFlow } = useSSO();
   const router = useRouter();
 
   const [emailAddress, setEmailAddress] = React.useState('');
@@ -39,61 +36,71 @@ export default function SignUpScreen() {
   const [error, setError] = React.useState('');
 
   const onSignUpPress = async () => {
-    if (!isLoaded) return;
     setLoading(true);
     setError('');
 
     try {
-      await signUp.create({
+      // Use the new Core 3 signal API: signUp.password()
+      const { error: signUpError } = await signUp.password({
         emailAddress,
         username,
         password,
       });
 
-      await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+      if (signUpError) {
+        setError(signUpError.message || 'An error occurred during sign up.');
+        return;
+      }
+
+      // Send email verification code
+      const { error: sendError } = await signUp.verifications.sendEmailCode();
+      if (sendError) {
+        setError(sendError.message || 'Failed to send verification code.');
+        return;
+      }
       setPendingVerification(true);
     } catch (err: any) {
       console.error(JSON.stringify(err, null, 2));
-      setError(err.errors?.[0]?.message || 'An error occurred during sign up.');
+      setError(err.errors?.[0]?.message || err.message || 'An error occurred during sign up.');
     } finally {
       setLoading(false);
     }
   };
 
   const onVerifyPress = async () => {
-    if (!isLoaded) return;
     setLoading(true);
     setError('');
 
     try {
-      const signUpAttempt = await signUp.attemptEmailAddressVerification({
+      const { error: verifyError } = await signUp.verifications.verifyEmailCode({
         code: code.trim(),
       });
 
-      if (signUpAttempt.createdSessionId) {
-        await setActive({ session: signUpAttempt.createdSessionId });
-        void analytics.track('sign_up', { method: 'email' });
-        router.replace('/');
-      } else if (signUpAttempt.status === 'complete') {
-        if (signUp.createdSessionId) {
-          await setActive({ session: signUp.createdSessionId });
-        }
-        router.replace('/');
+      if (verifyError) {
+        setError(verifyError.message || 'Verification failed. Please check the code.');
+        return;
+      }
+
+      if (signUp.status === 'complete') {
+        await signUp.finalize({
+          navigate: ({ session, decorateUrl }) => {
+            // Handle session tasks
+            if (session?.currentTask) {
+              console.log('Session task:', session.currentTask);
+              return;
+            }
+            void analytics.track('sign_up', { method: 'email' });
+            const url = decorateUrl('/');
+            router.replace(url as Href);
+          },
+        });
       } else {
-        console.error(JSON.stringify(signUpAttempt, null, 2));
+        console.error('Sign-up not complete:', signUp.status, signUp.missingFields);
         setError('Verification incomplete. Please check the code or try again.');
       }
     } catch (err: any) {
       console.error(JSON.stringify(err, null, 2));
-      const msg = err.errors?.[0]?.message || err.message || '';
-      if (msg.toLowerCase().includes('already verified') && signUp.createdSessionId) {
-        try {
-          await setActive({ session: signUp.createdSessionId });
-          router.replace('/');
-          return;
-        } catch {}
-      }
-      setError(msg || 'An error occurred during verification.');
+      setError(err.errors?.[0]?.message || err.message || 'An error occurred during verification.');
     } finally {
       setLoading(false);
     }
@@ -104,15 +111,48 @@ export default function SignUpScreen() {
       router.replace('/');
       return;
     }
+    setLoading(true);
+    setError('');
     try {
-      const { createdSessionId, setActive } = await startOAuthFlow({
-        redirectUrl: Linking.createURL('/', { scheme: 'travo' }),
+      const res = await startSSOFlow({
+        strategy: 'oauth_google',
+        redirectUrl: AuthSession.makeRedirectUri({
+          scheme: 'travo',
+          path: '/oauth-callback',
+        }),
       });
 
-      if (createdSessionId) {
-        await setActive!({ session: createdSessionId });
+      const sessionId =
+        res.createdSessionId ||
+        res.signUp?.createdSessionId ||
+        res.signIn?.createdSessionId;
+
+      if (sessionId && res.setActive) {
+        await res.setActive({ session: sessionId });
         void analytics.track('sign_up', { method: 'google' });
-        router.replace('/');
+        // Route to onboarding / profile completion to create username & password
+        router.replace('/complete-profile');
+        return;
+      }
+
+      if (res.signUp && res.signUp.status === 'missing_requirements') {
+        const fallbackUsername =
+          res.signUp.emailAddress?.split('@')[0]?.replace(/[^a-zA-Z0-9_]/g, '').slice(0, 20) ||
+          `user_${Date.now().toString().slice(-6)}`;
+
+        try {
+          const updated = await res.signUp.update({
+            username: fallbackUsername,
+          });
+          if (updated.createdSessionId && res.setActive) {
+            await res.setActive({ session: updated.createdSessionId });
+            void analytics.track('sign_up', { method: 'google' });
+            router.replace('/complete-profile');
+            return;
+          }
+        } catch (updateErr) {
+          console.error('Failed to auto-complete OAuth username:', updateErr);
+        }
       }
     } catch (err: any) {
       const message = typeof err?.message === 'string' ? err.message : '';
@@ -122,8 +162,10 @@ export default function SignUpScreen() {
       }
       console.error('OAuth error', err);
       setError('Failed to sign up with Google.');
+    } finally {
+      setLoading(false);
     }
-  }, [isSignedIn, router, startOAuthFlow]);
+  }, [isSignedIn, router, startSSOFlow]);
 
   return (
     <KeyboardAvoidingView

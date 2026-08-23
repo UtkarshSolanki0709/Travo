@@ -1,7 +1,7 @@
-import { useSignIn } from "@clerk/expo/legacy";
-import { useOAuth, useUser } from "@clerk/expo";
+import { useSignIn, useSSO, useUser } from "@clerk/expo";
 import { analytics } from "@/services/analytics";
 import { Link, useRouter } from 'expo-router';
+import type { Href } from 'expo-router';
 import {
   Text,
   TouchableOpacity,
@@ -13,21 +13,18 @@ import {
 } from 'react-native';
 import React from 'react';
 import { Send, AlertCircle } from 'lucide-react-native';
-import * as WebBrowser from 'expo-web-browser';
-import * as Linking from 'expo-linking';
+import * as AuthSession from 'expo-auth-session';
 import { useWarmUpBrowser } from '../../hooks/useWarmUpBrowser';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { COLORS } from '@/lib/theme';
 
-WebBrowser.maybeCompleteAuthSession();
-
 export default function Page() {
   useWarmUpBrowser();
-  const { signIn, setActive, isLoaded } = useSignIn();
+  const { signIn } = useSignIn();
   const { isSignedIn } = useUser();
-  const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' });
+  const { startSSOFlow } = useSSO();
   const router = useRouter();
 
   const [emailAddress, setEmailAddress] = React.useState('');
@@ -36,27 +33,43 @@ export default function Page() {
   const [error, setError] = React.useState('');
 
   const onSignInPress = async () => {
-    if (!isLoaded) return;
     setLoading(true);
     setError('');
 
     try {
-      const signInAttempt = await signIn.create({
-        identifier: emailAddress,
+      const { error: signInError } = await signIn.password({
+        emailAddress,
         password,
       });
 
-      if (signInAttempt.status === 'complete') {
-        await setActive({ session: signInAttempt.createdSessionId });
-        void analytics.track('sign_in', { method: 'password' });
-        router.replace('/');
+      if (signInError) {
+        setError(signInError.message || 'An error occurred during sign in.');
+        return;
+      }
+
+      if (signIn.status === 'complete') {
+        await signIn.finalize({
+          navigate: ({ session, decorateUrl }) => {
+            // Handle session tasks
+            if (session?.currentTask) {
+              console.log('Session task:', session.currentTask);
+              return;
+            }
+            void analytics.track('sign_in', { method: 'password' });
+            const url = decorateUrl('/');
+            router.replace(url as Href);
+          },
+        });
+      } else if (signIn.status === 'needs_second_factor' || signIn.status === 'needs_client_trust') {
+        // Handle MFA / Device Trust if needed in the future
+        setError('Additional verification required. Please contact support.');
       } else {
-        console.error(JSON.stringify(signInAttempt, null, 2));
+        console.error('Sign-in not complete:', signIn.status);
         setError('Sign in incomplete. Please check your credentials.');
       }
     } catch (err: any) {
-      console.error(JSON.stringify(err, null, 2));
-      setError(err.errors?.[0]?.message || 'An error occurred during sign in.');
+      console.error('Sign-in error:', JSON.stringify(err, null, 2));
+      setError(err.errors?.[0]?.message || err.message || 'An error occurred during sign in.');
     } finally {
       setLoading(false);
     }
@@ -67,15 +80,47 @@ export default function Page() {
       router.replace('/');
       return;
     }
+    setLoading(true);
+    setError('');
     try {
-      const { createdSessionId, setActive } = await startOAuthFlow({
-        redirectUrl: Linking.createURL('/', { scheme: 'travo' }),
+      const { createdSessionId, setActive, signUp } = await startSSOFlow({
+        strategy: 'oauth_google',
+        redirectUrl: AuthSession.makeRedirectUri({
+          scheme: 'travo',
+          path: '/oauth-callback',
+        }),
       });
 
-      if (createdSessionId) {
-        await setActive!({ session: createdSessionId });
+      // If the session was created, set it as active
+      if (createdSessionId && setActive) {
+        await setActive({
+          session: createdSessionId,
+        });
         void analytics.track('sign_in', { method: 'google' });
         router.replace('/');
+        return;
+      }
+
+      // If sign-up has missing requirements (e.g. username), route to complete-profile
+      if (signUp && signUp.status === 'missing_requirements') {
+        // Try to auto-complete username to unlock the session
+        const fallbackUsername =
+          signUp.emailAddress?.split('@')[0]?.replace(/[^a-zA-Z0-9_]/g, '').slice(0, 20) ||
+          `user_${Date.now().toString().slice(-6)}`;
+
+        try {
+          const updated = await signUp.update({
+            username: fallbackUsername,
+          });
+          if (updated.createdSessionId && setActive) {
+            await setActive({ session: updated.createdSessionId });
+            void analytics.track('sign_in', { method: 'google' });
+            router.replace('/complete-profile');
+            return;
+          }
+        } catch (updateErr) {
+          console.error('Failed to auto-complete OAuth username:', updateErr);
+        }
       }
     } catch (err: any) {
       const message = typeof err?.message === 'string' ? err.message : '';
@@ -85,8 +130,10 @@ export default function Page() {
       }
       console.error('OAuth error', err);
       setError('Failed to sign in with Google.');
+    } finally {
+      setLoading(false);
     }
-  }, [isSignedIn, router, startOAuthFlow]);
+  }, [isSignedIn, router, startSSOFlow]);
 
   return (
     <KeyboardAvoidingView
@@ -121,13 +168,12 @@ export default function Page() {
 
             <View className="mb-4">
               <Input
-                label="Email address"
-                aria-label="Email address"
+                label="Email or Username"
+                aria-label="Email or Username"
                 autoCapitalize="none"
                 value={emailAddress}
-                placeholder="Enter your email"
+                placeholder="Enter your email or username"
                 onChangeText={setEmailAddress}
-                keyboardType="email-address"
               />
             </View>
 

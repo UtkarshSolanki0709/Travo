@@ -421,7 +421,7 @@ const MapScreen = () => {
           }
         });
       }
-    }, [clerkUser?.id]),
+    }, [clerkUser, fetchActivities, startForegroundWatch, updateLocation]),
   );
 
   const handleActivityCreated = () => {

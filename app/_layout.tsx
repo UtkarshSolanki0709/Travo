@@ -111,7 +111,24 @@ function InitialLayout() {
         });
     }
 
-    if (!isSignedIn && !inAuthGroup) {
+    if (isSignedIn && inAuthGroup) {
+      const currentAuthScreen = segments[1];
+      // Do not interrupt onboarding/consent screens
+      if (
+        currentAuthScreen === "complete-profile" ||
+        currentAuthScreen === "oauth-callback" ||
+        currentAuthScreen === "legal-consent"
+      ) {
+        return;
+      }
+
+      // If user signed in but has no username set yet, send to onboarding
+      if (!user?.username) {
+        router.replace("/complete-profile");
+      } else {
+        router.replace("/");
+      }
+    } else if (!isSignedIn && !inAuthGroup) {
       // Redirect to sign-in if not signed in and trying to access app
       router.replace("/sign-in");
     }
