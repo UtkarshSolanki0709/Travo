@@ -1,13 +1,16 @@
 <div align="center">
 
+  <img src="./assets/images/icon.png" alt="Travo Logo" width="120" style="border-radius: 24px;" />
+
   # ✈️ TRAVO
 
   ### *Modern Social Travel & Real-Time Exploration Companion*
 
+  [![Android Release](https://img.shields.io/badge/Download-Android%20APK%20(v1.0.1)-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/UtkarshSolanki0709/Travo/releases/latest)
   [![Expo SDK](https://img.shields.io/badge/Expo-SDK%2054-000000?style=for-the-badge&logo=expo&logoColor=white)](https://expo.dev)
   [![React Native](https://img.shields.io/badge/React%20Native-0.81.5-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactnative.dev)
   [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-  [![Tailwind CSS](https://img.shields.io/badge/NativeWind-v4.2-38BDF8?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://nativewind.dev)
+  [![NativeWind](https://img.shields.io/badge/NativeWind-v4.2-38BDF8?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://nativewind.dev)
   [![Supabase](https://img.shields.io/badge/Supabase-Database-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
   [![Clerk](https://img.shields.io/badge/Clerk-Auth-6C47FF?style=for-the-badge&logo=clerk&logoColor=white)](https://clerk.com)
 
@@ -15,7 +18,14 @@
     <b>Travo</b> connects travelers worldwide through real-time location sharing, interest-matched group activities, interactive mapping, and media-rich travel storytelling.
   </p>
 
-  [Features](#-key-features) • [Tech Stack](#%EF%B8%8F-tech-stack--architecture) • [Project Structure](#-project-structure) • [Getting Started](#-getting-started) • [Environment Variables](#-environment-variables) • [Database Schema](#%EF%B8%8F-database-schema)
+  <p align="center">
+    <a href="https://github.com/UtkarshSolanki0709/Travo/releases/latest"><b>📲 Download Android APK</b></a> •
+    <a href="#-key-features">Features</a> •
+    <a href="#%EF%B8%8F-tech-stack--architecture">Tech Stack</a> •
+    <a href="#-getting-started">Getting Started</a> •
+    <a href="#-environment-variables">Environment Variables</a> •
+    <a href="#%EF%B8%8F-database-schema">Database Schema</a>
+  </p>
 
 ---
 
@@ -24,6 +34,7 @@
 ## 📖 Table of Contents
 
 - [Overview](#-overview)
+- [Download & Installation (Android)](#-download--installation-android)
 - [Key Features](#-key-features)
 - [Tech Stack & Architecture](#%EF%B8%8F-tech-stack--architecture)
 - [Project Structure](#-project-structure)
@@ -44,6 +55,17 @@
 **Travo** is a full-featured, cross-platform mobile & web application built using **React Native**, **Expo SDK 54**, **Supabase**, and **Clerk**. Designed for modern wanderers and adventure seekers, Travo turns solo journeys into shared experiences by linking travelers based on proximity, common interests, and real-time availability.
 
 Whether you're looking for a coffee buddy in Tokyo, a hiking crew in Banff, or want to broadcast your trip memories with high-res photos and videos, Travo provides an intuitive and seamless social travel ecosystem.
+
+---
+
+## 📲 Download & Installation (Android)
+
+Experience Travo directly on your Android device without setting up a local build environment:
+
+1. **Download APK**: Grab the latest APK build from the **[GitHub Releases page](https://github.com/UtkarshSolanki0709/Travo/releases/latest)**.
+2. **Install**: Tap the downloaded `Travo.apk` file on your device.
+3. **Allow Unknown Sources**: If prompted by Android, grant permission to install from your browser / file manager (*"Allow from this source"*).
+4. **Launch & Explore**: Open **Travo**, sign up or log in, and start discovering travelers and activities around you!
 
 ---
 
