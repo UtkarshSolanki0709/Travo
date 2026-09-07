@@ -1,42 +1,13 @@
+d 
+
 <div align="center">
-
-  <img src="./assets/images/icon.png" alt="Travo Logo" width="120" style="border-radius: 24px;" />
-
-  # ✈️ TRAVO
-
-  ### *Modern Social Travel & Real-Time Exploration Companion*
-
-  [![Android Release](https://img.shields.io/badge/Download-Android%20APK%20(v1.0.1)-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/UtkarshSolanki0709/Travo/releases/latest)
-  [![Expo SDK](https://img.shields.io/badge/Expo-SDK%2054-000000?style=for-the-badge&logo=expo&logoColor=white)](https://expo.dev)
-  [![React Native](https://img.shields.io/badge/React%20Native-0.81.5-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactnative.dev)
-  [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-  [![NativeWind](https://img.shields.io/badge/NativeWind-v4.2-38BDF8?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://nativewind.dev)
-  [![Supabase](https://img.shields.io/badge/Supabase-Database-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
-  [![Clerk](https://img.shields.io/badge/Clerk-Auth-6C47FF?style=for-the-badge&logo=clerk&logoColor=white)](https://clerk.com)
-
-  <p align="center">
-    <b>Travo</b> connects travelers worldwide through real-time location sharing, interest-matched group activities, interactive mapping, and media-rich travel storytelling.
-  </p>
-
-  <p align="center">
-    <a href="https://github.com/UtkarshSolanki0709/Travo/releases/latest"><b>📲 Download Android APK</b></a> •
-    <a href="#-key-features">Features</a> •
-    <a href="#%EF%B8%8F-tech-stack--architecture">Tech Stack</a> •
-    <a href="#-getting-started">Getting Started</a> •
-    <a href="#-environment-variables">Environment Variables</a> •
-    <a href="#%EF%B8%8F-database-schema">Database Schema</a>
-  </p>
-
----
-
-</div>
 
 ## 📖 Table of Contents
 
 - [Overview](#-overview)
-- [Download & Installation (Android)](#-download--installation-android)
+- [Download &amp; Installation (Android)](#-download--installation-android)
 - [Key Features](#-key-features)
-- [Tech Stack & Architecture](#%EF%B8%8F-tech-stack--architecture)
+- [Tech Stack &amp; Architecture](#%EF%B8%8F-tech-stack--architecture)
 - [Project Structure](#-project-structure)
 - [Database Schema](#%EF%B8%8F-database-schema)
 - [Third-Party Services](#-third-party-services)
@@ -52,7 +23,7 @@
 
 ## 🌟 Overview
 
-**Travo** is a full-featured, cross-platform mobile & web application built using **React Native**, **Expo SDK 54**, **Supabase**, and **Clerk**. Designed for modern wanderers and adventure seekers, Travo turns solo journeys into shared experiences by linking travelers based on proximity, common interests, and real-time availability.
+**Travo** is a full-featured, cross-platform mobile & web application built using **React Native**, **Expo SDK 57**, **Supabase**, and **Clerk**. Designed for modern wanderers and adventure seekers, Travo turns solo journeys into shared experiences by linking travelers based on proximity, common interests, and real-time availability.
 
 Whether you're looking for a coffee buddy in Tokyo, a hiking crew in Banff, or want to broadcast your trip memories with high-res photos and videos, Travo provides an intuitive and seamless social travel ecosystem.
 
@@ -64,7 +35,7 @@ Experience Travo directly on your Android device without setting up a local buil
 
 1. **Download APK**: Grab the latest APK build from the **[GitHub Releases page](https://github.com/UtkarshSolanki0709/Travo/releases/latest)**.
 2. **Install**: Tap the downloaded `Travo.apk` file on your device.
-3. **Allow Unknown Sources**: If prompted by Android, grant permission to install from your browser / file manager (*"Allow from this source"*).
+3. **Allow Unknown Sources**: If prompted by Android, grant permission to install from your browser / file manager (_"Allow from this source"_).
 4. **Launch & Explore**: Open **Travo**, sign up or log in, and start discovering travelers and activities around you!
 
 ---
@@ -72,22 +43,26 @@ Experience Travo directly on your Android device without setting up a local buil
 ## ✨ Key Features
 
 ### 📍 1. Interactive Real-Time Map & Routing
+
 - **Live Location Tracking**: Toggle location visibility with smooth background and foreground tracking options (`expo-location`, `expo-task-manager`).
 - **Geoapify Search & Autocomplete**: Real-time venue and place suggestions tailored to user proximity.
 - **Turn-by-Turn Navigation**: Dynamic route generation calculating distance (km) and travel duration (min) via Geoapify Routing API.
 - **Cross-Platform Map Render**: Native Google Maps rendering on iOS/Android via `react-native-maps` with web map support.
 
 ### 👥 2. Social Activities & Meetups
+
 - **Activity Creation**: Host activities categorized by size (**Duo**, **Trio**, **Group**) and visibility (**Public**, **Friends**, **Invite Only**).
-- **Interest Matching**: Filter activities by categories such as *Sightseeing, Foodie, Hiking, Photography, Nightlife, Culture*, and more.
+- **Interest Matching**: Filter activities by categories such as _Sightseeing, Foodie, Hiking, Photography, Nightlife, Culture_, and more.
 - **Status & Requests**: Manage upcoming, ongoing, and completed activities with full join request workflow management.
 
 ### 📸 3. Traveler Community Feed
+
 - **Media Storytelling**: Share travel memories with text, venue tags, and high-definition photos or videos.
 - **Cloudinary Optimization**: Dynamic image resizing, video thumbnail generation, and adaptive quality delivery (`@cloudinary/url-gen`).
 - **Social Engagement**: Like, comment, and filter posts by public vs. friends-only visibility.
 
 ### 👤 4. Rich User Profiles & Presence
+
 - **Personalized Showcase**: Custom avatar, bio, travel stats (friends count, activities hosted/joined), and tag cloud of interests.
 - **Real-Time Presence**: Track availability status (`idle`, `in_activity`, `looking`).
 - **Clerk & Supabase Sync**: Bi-directional data sync ensuring seamless identity management between Clerk Auth and Supabase PostgreSQL.
@@ -97,13 +72,15 @@ Experience Travo directly on your Android device without setting up a local buil
 ## 🛠️ Tech Stack & Architecture
 
 ### **Frontend & UI**
-- **Framework**: [React Native 0.81](https://reactnative.dev) + [Expo 54](https://expo.dev)
+
+- **Framework**: [React Native 0.86](https://reactnative.dev) + [Expo 57](https://expo.dev)
 - **Routing**: [Expo Router v6](https://docs.expo.dev/router/introduction/) (File-based navigation)
 - **Language**: [TypeScript 5.9](https://www.typescriptlang.org/)
 - **Styling**: [NativeWind v4](https://nativewind.dev) (Tailwind CSS v3) + `expo-linear-gradient`
 - **Icons & Animation**: `@expo/vector-icons` (Ionicons) + `react-native-reanimated`
 
 ### **Backend & Infrastructure**
+
 - **Authentication**: [Clerk Expo](https://clerk.com) (JWT token caching via `expo-secure-store`)
 - **Database & Realtime**: [Supabase](https://supabase.com) (PostgreSQL Database Engine)
 - **Media Engine**: [Cloudinary](https://cloudinary.com) (CDN & media transformations)
@@ -181,15 +158,15 @@ Travo/
 
 Travo relies on a relational PostgreSQL database powered by **Supabase**. The core entities include:
 
-| Table | Description | Key Fields |
-| :--- | :--- | :--- |
-| **`users`** | Core user credentials & profile information | `id`, `email`, `username`, `display_name`, `avatar_url`, `city`, `country`, `bio` |
-| **`profiles`** | Extended live tracking & preferences | `user_id`, `interests`, `last_latitude`, `last_longitude`, `is_live_tracking` |
-| **`user_presence`** | Real-time user availability status | `user_id`, `status` (`idle` \| `in_activity` \| `looking`), `current_activity_id` |
-| **`activities`** | Traveler meetups & events | `id`, `creator_id`, `title`, `size_type`, `visibility`, `latitude`, `longitude`, `status` |
-| **`posts`** | Social media feed items | `id`, `author_id`, `text`, `media_url`, `media_type`, `venue_name`, `location_name` |
-| **`post_comments`**| Discussion comments on travel posts | `id`, `post_id`, `author_id`, `text`, `created_at` |
-| **`analytics_events`** | Product analytics events (batched from the app's local SQLite queue — see `supabase/migrations/`) | `id`, `user_id`, `name`, `props`, `created_at` |
+| Table                          | Description                                                                                         | Key Fields                                                                                                |
+| :----------------------------- | :-------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------- |
+| **`users`**            | Core user credentials & profile information                                                         | `id`, `email`, `username`, `display_name`, `avatar_url`, `city`, `country`, `bio`         |
+| **`profiles`**         | Extended live tracking & preferences                                                                | `user_id`, `interests`, `last_latitude`, `last_longitude`, `is_live_tracking`                   |
+| **`user_presence`**    | Real-time user availability status                                                                  | `user_id`, `status` (`idle` \| `in_activity` \| `looking`), `current_activity_id`             |
+| **`activities`**       | Traveler meetups & events                                                                           | `id`, `creator_id`, `title`, `size_type`, `visibility`, `latitude`, `longitude`, `status` |
+| **`posts`**            | Social media feed items                                                                             | `id`, `author_id`, `text`, `media_url`, `media_type`, `venue_name`, `location_name`         |
+| **`post_comments`**    | Discussion comments on travel posts                                                                 | `id`, `post_id`, `author_id`, `text`, `created_at`                                              |
+| **`analytics_events`** | Product analytics events (batched from the app's local SQLite queue — see`supabase/migrations/`) | `id`, `user_id`, `name`, `props`, `created_at`                                                  |
 
 ---
 
@@ -211,6 +188,7 @@ Follow these steps to get a local development instance up and running.
 ### Prerequisites
 
 Make sure you have the following installed on your machine:
+
 - **Node.js** (v18.0.0 or higher)
 - **npm** or **yarn** / **pnpm**
 - **Expo Go** app on your iOS/Android device (or Android Studio / Xcode for emulators)
@@ -220,12 +198,13 @@ Make sure you have the following installed on your machine:
 ### Installation
 
 1. **Clone the repository:**
+
    ```bash
    git clone https://github.com/UtkarshSolanki0709/Travo.git
    cd Travo
    ```
-
 2. **Install project dependencies:**
+
    ```bash
    npm install
    ```
@@ -303,9 +282,3 @@ Contributions make the open-source community an amazing place to learn, inspire,
 Distributed under the MIT License. See `LICENSE` for more information.
 
 <div align="center">
-
----
-
-Made with ❤️ by [Utkarsh Solanki](https://github.com/UtkarshSolanki0709) and the Travo Community.
-
-</div>

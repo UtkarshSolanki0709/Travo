@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 import { COLORS } from '@/lib/theme';
 import { useReducedMotion } from '@/lib/accessibility';
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import * as Haptics from 'expo-haptics';
+import type { Tabs } from 'expo-router';
+import type React from 'react';
 import { Map, CalendarDays, MessageCircle, Users, UserRound } from 'lucide-react-native';
 import { Pressable, View, Text } from 'react-native';
 import Animated, {
@@ -11,6 +12,9 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+
+export type CustomTabBarProps = Parameters<NonNullable<React.ComponentProps<typeof Tabs>['tabBar']>>[0];
+
 
 const TAB_ICONS = {
   'map/index': Map,
@@ -126,7 +130,7 @@ function TabBarItem({
  * - Reduced-motion support
  * - Teal-700 active color, text-secondary inactive
  */
-export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarProps) {
   const reduceMotion = useReducedMotion();
 
   // Hide tabs that have href: null or route name 'index'
