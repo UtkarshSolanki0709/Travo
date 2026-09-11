@@ -30,8 +30,7 @@ import { COLORS, NAV_THEME } from "../lib/theme";
 import { setSupabaseTokenGetter } from "../lib/supabase";
 import { database } from "../services/database";
 import { analytics } from "../services/analytics";
-// Importing the task module both binds LOCATION_TASK_NAME and registers the
-// background task definition with TaskManager (must run once at startup).
+
 import { LOCATION_TASK_NAME } from "../services/locationTask";
 import { useRealtimeNotifications } from "../hooks/useRealtimeNotifications";
 
@@ -45,6 +44,13 @@ if (!CLERK_PUBLISHABLE_KEY) {
   );
 }
 
+if (__DEV__ && CLERK_PUBLISHABLE_KEY) {
+  const isProdKey = CLERK_PUBLISHABLE_KEY.startsWith("pk_live_");
+  console.log(
+    `[Clerk] Initialized with ${isProdKey ? "PRODUCTION (pk_live_...)" : "DEVELOPMENT (pk_test_...)"} instance.`,
+  );
+}
+
 function InitialLayout() {
   const { isLoaded, isSignedIn, getToken } = useAuth();
   const { user } = useUser();
@@ -52,19 +58,37 @@ function InitialLayout() {
   const router = useRouter();
   const trackedAppOpen = useRef(false);
 
-  // Subscribe to real-time notifications for join requests and comments
   useRealtimeNotifications();
 
-  // Wire Clerk JWT to Supabase client for RLS authentication
   useEffect(() => {
     if (isSignedIn) {
-      setSupabaseTokenGetter(() => getToken({ template: "travo" }));
+      setSupabaseTokenGetter(async () => {
+        try {
+          let token: string | null = null;
+          try {
+            token = await getToken({ template: "supabase" });
+          } catch {
+          }
+          if (!token) {
+            try {
+              token = await getToken({ template: "travo" });
+            } catch {
+            }
+          }
+          if (!token) {
+            token = await getToken();
+          }
+          return token;
+        } catch (err) {
+          console.error("[Clerk -> Supabase] Error retrieving auth token:", err);
+          return null;
+        }
+      });
     } else {
       setSupabaseTokenGetter(null);
     }
   }, [isSignedIn, getToken]);
 
-  // Analytics: identify the user, log app_open once, flush on foreground
   useEffect(() => {
     if (!isLoaded) return;
     analytics.setUser(isSignedIn ? user?.id ?? null : null);
@@ -99,8 +123,6 @@ function InitialLayout() {
           .catch((err) => console.error("Error syncing user:", err));
       }
     } else {
-      // Stop background journey sharing so a signed-out device stops
-      // updating the previous user's live location.
       TaskManager.isTaskRegisteredAsync(LOCATION_TASK_NAME)
         .then((registered) =>
           registered
@@ -116,7 +138,6 @@ function InitialLayout() {
 
     if (isSignedIn && inAuthGroup) {
       const currentAuthScreen = segments[1];
-      // Do not interrupt onboarding/consent screens
       if (
         currentAuthScreen === "complete-profile" ||
         currentAuthScreen === "oauth-callback" ||
@@ -125,14 +146,12 @@ function InitialLayout() {
         return;
       }
 
-      // If user signed in but has no username set yet, send to onboarding
       if (!user?.username) {
         router.replace("/complete-profile");
       } else {
         router.replace("/");
       }
     } else if (!isSignedIn && !inAuthGroup) {
-      // Redirect to sign-in if not signed in and trying to access app
       router.replace("/sign-in");
     }
   }, [isSignedIn, isLoaded, segments, router, user]);
@@ -173,7 +192,7 @@ export default function RootLayout() {
   }, [fontsLoaded, fontError]);
 
   if (!fontsLoaded && !fontError) {
-    return null; // Splash screen stays visible
+    return null;
   }
 
   return (
