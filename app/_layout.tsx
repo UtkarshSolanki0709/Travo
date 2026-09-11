@@ -33,6 +33,7 @@ import { analytics } from "../services/analytics";
 // Importing the task module both binds LOCATION_TASK_NAME and registers the
 // background task definition with TaskManager (must run once at startup).
 import { LOCATION_TASK_NAME } from "../services/locationTask";
+import { useRealtimeNotifications } from "../hooks/useRealtimeNotifications";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -50,6 +51,9 @@ function InitialLayout() {
   const segments = useSegments();
   const router = useRouter();
   const trackedAppOpen = useRef(false);
+
+  // Subscribe to real-time notifications for join requests and comments
+  useRealtimeNotifications();
 
   // Wire Clerk JWT to Supabase client for RLS authentication
   useEffect(() => {

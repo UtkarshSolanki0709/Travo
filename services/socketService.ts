@@ -5,7 +5,7 @@ const BACKEND_URL = config.backendUrl;
 
 let socket: Socket | null = null;
 let currentConnectedUserId: string | null = null;
-let reconnectListeners: Array<() => void> = [];
+let reconnectListeners: (() => void)[] = [];
 
 export const socketService = {
   connect(userId: string) {

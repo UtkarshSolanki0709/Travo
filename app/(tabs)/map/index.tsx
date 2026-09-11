@@ -5,9 +5,19 @@ import { SignOutButton } from "@/components/common/SignOutButton";
 import { useMapContext } from "@/context/MapContext";
 import { database, type Activity } from "@/services/database";
 import { reverseGeocode, searchAll } from "@/services/geoapify";
-import { getRoute, LatLng } from "@/services/routes";
+import { getRoute, LatLng, TravelMode } from "@/services/routes";
+import { tileCacheService } from "@/services/tileCacheService";
 import { useUser } from "@clerk/expo";
-import { Crosshair, Menu, X, MapPin, User, ChevronRight, Search } from "lucide-react-native";
+import {
+  Crosshair,
+  Menu,
+  X,
+  MapPin,
+  User,
+  ChevronRight,
+  Search,
+  Download,
+} from "lucide-react-native";
 import { COLORS } from "@/lib/theme";
 import * as Location from "expo-location";
 import * as TaskManager from "expo-task-manager";
@@ -19,6 +29,8 @@ import { LOCATION_TASK_NAME } from "@/services/locationTask";
 import { analytics } from "@/services/analytics";
 
 import {
+  Alert,
+  ActivityIndicator,
   FlatList,
   Keyboard,
   Modal,
@@ -30,7 +42,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
+import MapView, { Marker, Polyline, UrlTile, PROVIDER_GOOGLE } from "react-native-maps";
 
 const MapScreen = () => {
   const {
@@ -48,11 +60,15 @@ const MapScreen = () => {
   const [results, setResults] = useState<any[]>([]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLocationEnabled, setIsLocationEnabled] = useState(false);
+  const [travelMode, setTravelMode] = useState<TravelMode>("drive");
+  const [cachingTiles, setCachingTiles] = useState(false);
   const [route, setRoute] = useState<{
     points: LatLng[];
     distanceKm: number;
     durationMin: number;
+    mode?: TravelMode;
   } | null>(null);
+  const activeRoute = !userLocation || !selectedLocation ? null : route;
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(
@@ -216,6 +232,7 @@ const MapScreen = () => {
       setResults([]);
       debouncedSearch.cancel();
       setSelectedLocation(null);
+      setRoute(null);
 
       const target = userLocation || fallbackRegion;
       mapRef.current?.animateToRegion(
@@ -431,7 +448,6 @@ const MapScreen = () => {
   // Route fetching logic
   useEffect(() => {
     if (!userLocation || !selectedLocation) {
-      setRoute(null);
       lastRoutePosition.current = null;
       lastRouteTimestamp.current = 0;
       lastSelectedLocationId.current = null;
@@ -468,6 +484,7 @@ const MapScreen = () => {
           latitude: selectedLocation.latitude,
           longitude: selectedLocation.longitude,
         },
+        travelMode,
       );
       setRoute(result);
       lastRoutePosition.current = {
@@ -479,7 +496,7 @@ const MapScreen = () => {
     };
 
     run();
-  }, [userLocation, selectedLocation]);
+  }, [userLocation, selectedLocation, travelMode]);
 
   return (
     <View className="flex-1">
@@ -505,6 +522,12 @@ const MapScreen = () => {
         showsBuildings={false}
         showsTraffic={false}
       >
+        <UrlTile
+          urlTemplate="https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
+          maximumZ={19}
+          flipY={false}
+          zIndex={-1}
+        />
         {selectedLocation && (
           <Marker
             coordinate={selectedLocation}
@@ -512,9 +535,9 @@ const MapScreen = () => {
             pinColor="red"
           />
         )}
-        {route && (
+        {activeRoute && (
           <Polyline
-            coordinates={route.points}
+            coordinates={activeRoute.points}
             strokeWidth={5}
             strokeColor={COLORS.primary}
             lineCap="round"
@@ -561,23 +584,32 @@ const MapScreen = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Unified Top Controls Bar: Search Input + Floating Menu Button */}
-      <View pointerEvents="box-none" className="absolute left-4 right-4 top-12 z-30 flex-row items-start gap-2">
-        <View className="flex-1 rounded-radius-lg bg-surface/95 p-2 shadow-elevation-2 border border-border">
-          <View className="flex-row items-center h-10 px-3 rounded-radius-md bg-surface-elevated border border-border">
-            <Search size={18} color={COLORS.textSecondary} className="mr-2" />
+      {/* Search and Menu Bar (Floating Top) */}
+      <View
+        pointerEvents="box-none"
+        className="absolute left-4 right-4 z-40 flex-row items-center gap-2"
+        style={{ top: 56 }}
+      >
+        <View className="flex-1">
+          <View className="flex-row items-center rounded-radius-md bg-surface px-3 shadow-elevation-2 border border-border">
+            <Search size={18} color={COLORS.textSecondary} />
             <TextInput
-              placeholder="Search for a place, cafe, etc..."
+              className="h-12 flex-1 ml-2 text-body-md text-foreground font-body"
+              placeholder="Search places or coordinates..."
               placeholderTextColor={COLORS.textSecondary}
               value={query}
               onChangeText={handleSearch}
-              multiline={false}
-              numberOfLines={1}
-              className="flex-1 text-body-md text-foreground font-body p-0 h-full"
+              returnKeyType="search"
+              clearButtonMode="while-editing"
             />
             {query.length > 0 && (
-              <TouchableOpacity onPress={() => handleSearch("")} className="p-1">
-                <X size={16} color={COLORS.textSecondary} />
+              <TouchableOpacity
+                onPress={() => {
+                  setQuery("");
+                  setResults([]);
+                }}
+              >
+                <X size={18} color={COLORS.textSecondary} />
               </TouchableOpacity>
             )}
           </View>
@@ -585,16 +617,16 @@ const MapScreen = () => {
           {results.length > 0 && (
             <FlatList
               data={results}
-              keyExtractor={(item, index) => `${item.id}-${index}`}
+              keyExtractor={(item) => item.place_id || item.formatted}
+              className="mt-1 max-h-56 rounded-radius-md bg-surface border border-border shadow-elevation-3"
               keyboardShouldPersistTaps="handled"
-              className="mt-2 max-h-56 border-t border-border"
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  className="border-b border-border/50 py-2.5 px-1"
+                  className="border-b border-border/50 px-4 py-3 active:bg-muted"
                   onPress={() => handleSelectPlace(item)}
                 >
-                  <Text className="text-body-sm text-foreground font-body" numberOfLines={2}>
-                    {item.place_name}
+                  <Text className="text-body-md text-foreground font-body">
+                    {item.formatted}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -615,10 +647,12 @@ const MapScreen = () => {
         <LocationInfoCard
           name={selectedLocation.name || "Selected Location"}
           address={selectedLocation.formattedAddress}
-          eta={route ? `${Math.round(route.durationMin)} min` : undefined}
-          distance={route ? `${route.distanceKm.toFixed(1)} km` : undefined}
-          distanceKm={route?.distanceKm}
-          driveDurationMin={route?.durationMin}
+          eta={activeRoute ? `${Math.round(activeRoute.durationMin)} min` : undefined}
+          distance={activeRoute ? `${activeRoute.distanceKm.toFixed(1)} km` : undefined}
+          distanceKm={activeRoute?.distanceKm}
+          driveDurationMin={activeRoute?.durationMin}
+          selectedMode={travelMode}
+          onSelectMode={(mode) => setTravelMode(mode)}
           onCreateActivity={() => setIsCreateModalVisible(true)}
           onClose={() => {
             setSelectedLocation(null);
@@ -679,6 +713,49 @@ const MapScreen = () => {
               </Text>
             </View>
             <ChevronRight size={18} color={COLORS.textSecondary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            className="flex-row items-center justify-between py-3 border-t border-border"
+            disabled={cachingTiles}
+            onPress={async () => {
+              if (!userLocation) {
+                Alert.alert(
+                  "Location Needed",
+                  "Waiting for device GPS location to cache local tiles."
+                );
+                return;
+              }
+              setCachingTiles(true);
+              try {
+                const res = await tileCacheService.downloadRegionTiles(
+                  userLocation.latitude,
+                  userLocation.longitude,
+                  3
+                );
+                const stats = await tileCacheService.getCacheStats();
+                Alert.alert(
+                  "Offline Map Ready 🗺️",
+                  `Cached ${res.tileCount} map tiles (${stats.sizeMb} MB) for offline navigation.`
+                );
+              } catch {
+                Alert.alert("Offline Map", "Failed to cache offline map tiles.");
+              } finally {
+                setCachingTiles(false);
+              }
+            }}
+          >
+            <View className="flex-row items-center">
+              <Download size={18} color={COLORS.primary} />
+              <Text className="ml-2 text-body-md font-semibold text-foreground font-body">
+                {cachingTiles ? "Caching Tiles..." : "Cache Offline Map"}
+              </Text>
+            </View>
+            {cachingTiles ? (
+              <ActivityIndicator size="small" color={COLORS.primary} />
+            ) : (
+              <ChevronRight size={18} color={COLORS.textSecondary} />
+            )}
           </TouchableOpacity>
           {clerkUser ? (
             <View className="mt-2 rounded-xl bg-slate-50">

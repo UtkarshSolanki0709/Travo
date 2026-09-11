@@ -5,6 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { COLORS } from "@/lib/theme";
 
+import type { TravelMode } from "@/services/routes";
+
 interface LocationInfoCardProps {
   name: string;
   address?: string;
@@ -12,6 +14,8 @@ interface LocationInfoCardProps {
   distance?: string;
   distanceKm?: number;
   driveDurationMin?: number;
+  selectedMode?: TravelMode;
+  onSelectMode?: (mode: TravelMode) => void;
   onCreateActivity: () => void;
   onClose?: () => void;
 }
@@ -23,6 +27,8 @@ export default function LocationInfoCard({
   distance,
   distanceKm,
   driveDurationMin,
+  selectedMode = "drive",
+  onSelectMode,
   onCreateActivity,
   onClose,
 }: LocationInfoCardProps) {
@@ -73,6 +79,8 @@ export default function LocationInfoCard({
         <ModeOfTransport
           distanceKm={distanceKm}
           driveDurationMin={driveDurationMin}
+          selectedMode={selectedMode}
+          onSelectMode={onSelectMode}
         />
       )}
 

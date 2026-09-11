@@ -51,6 +51,15 @@ const MIGRATIONS: string[] = [
     created_at TEXT NOT NULL
   );
   `,
+  `
+  CREATE TABLE IF NOT EXISTS routes_cache (
+    id TEXT PRIMARY KEY NOT NULL,
+    points_json TEXT NOT NULL,
+    distance_km REAL NOT NULL,
+    duration_min REAL NOT NULL,
+    created_at TEXT NOT NULL
+  );
+  `,
 ];
 
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;

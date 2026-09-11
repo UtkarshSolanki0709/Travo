@@ -1,12 +1,15 @@
 import { Car, Bus, Bike, Footprints } from "lucide-react-native";
 import { useMemo } from "react";
-import { Text, View } from "react-native";
+import { Text, View, TouchableOpacity } from "react-native";
 import { COLORS } from "@/lib/theme";
+import type { TravelMode } from "@/services/routes";
 
 interface ModeOfTransportProps {
   distanceKm: number; // in kilometers
   driveDurationMin: number; // in minutes
   timeOfDay?: Date; // Optional: for time-based adjustments
+  selectedMode?: TravelMode;
+  onSelectMode?: (mode: TravelMode) => void;
 }
 
 const formatDuration = (minutes: number) => {
@@ -28,8 +31,16 @@ export default function ModeOfTransport({
   distanceKm,
   driveDurationMin,
   timeOfDay,
+  selectedMode = "drive",
+  onSelectMode,
 }: ModeOfTransportProps) {
-  const modes = useMemo(() => {
+  const modes: {
+    id: TravelMode;
+    Icon: any;
+    label: string;
+    duration: number;
+    iconColor: string;
+  }[] = useMemo(() => {
     const currentTime = timeOfDay || new Date();
     const isRushHour = isPeakHour(currentTime);
 
@@ -88,7 +99,7 @@ export default function ModeOfTransport({
 
     return [
       {
-        id: "car",
+        id: "drive",
         Icon: Car,
         label: "Drive",
         duration: carDuration,
@@ -102,7 +113,7 @@ export default function ModeOfTransport({
         iconColor: "#10b981",
       },
       {
-        id: "bike",
+        id: "bicycle",
         Icon: Bike,
         label: "Bike",
         duration: bikeDuration,
@@ -127,20 +138,40 @@ export default function ModeOfTransport({
     return null;
 
   return (
-    <View className="flex-row justify-between w-full mt-4 bg-surface-elevated p-3 rounded-radius-md border border-border">
-      {modes.map(({ id, Icon, label, duration, iconColor }) => (
-        <View key={id} className="items-center justify-center flex-1">
-          <View className="bg-surface p-2 rounded-full shadow-elevation-1 mb-1 border border-border">
-            <Icon size={18} color={iconColor} />
-          </View>
-          <Text className="text-body-sm font-bold text-foreground font-body">
-            {formatDuration(duration)}
-          </Text>
-          <Text className="text-[10px] text-muted-foreground capitalize font-body">
-            {label}
-          </Text>
-        </View>
-      ))}
+    <View className="flex-row justify-between w-full mt-4 bg-surface-elevated p-2 rounded-radius-md border border-border">
+      {modes.map(({ id, Icon, label, duration, iconColor }) => {
+        const isSelected = selectedMode === id;
+        return (
+          <TouchableOpacity
+            key={id}
+            activeOpacity={0.7}
+            onPress={() => onSelectMode?.(id)}
+            className={`items-center justify-center flex-1 py-1.5 px-1 rounded-radius-sm ${
+              isSelected ? "bg-primary/10 border border-primary/30" : ""
+            }`}
+          >
+            <View
+              className={`p-2 rounded-full mb-1 border ${
+                isSelected
+                  ? "bg-primary/20 border-primary"
+                  : "bg-surface border-border shadow-elevation-1"
+              }`}
+            >
+              <Icon size={18} color={isSelected ? COLORS.primary : iconColor} />
+            </View>
+            <Text
+              className={`text-body-sm font-bold font-body ${
+                isSelected ? "text-primary font-bold" : "text-foreground"
+              }`}
+            >
+              {formatDuration(duration)}
+            </Text>
+            <Text className="text-[10px] text-muted-foreground capitalize font-body">
+              {label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 }
