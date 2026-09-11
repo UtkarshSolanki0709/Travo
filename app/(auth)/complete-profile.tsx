@@ -57,56 +57,85 @@ export default function CompleteProfileScreen() {
       return;
     }
 
-    if (!trimmedPassword) {
+    if (!user.passwordEnabled && !trimmedPassword) {
       setError("Please create a password so you can also log in manually.");
       return;
     }
 
-    if (trimmedPassword.length < 8) {
-      setError("Password must be at least 8 characters long.");
-      return;
-    }
+    if (trimmedPassword) {
+      if (trimmedPassword.length < 8) {
+        setError("Password must be at least 8 characters long.");
+        return;
+      }
 
-    if (trimmedPassword !== confirmPassword.trim()) {
-      setError("Passwords do not match.");
-      return;
+      if (trimmedPassword !== confirmPassword.trim()) {
+        setError("Passwords do not match.");
+        return;
+      }
     }
 
     setLoading(true);
     setError("");
 
     try {
-      // 1. Update Username and Display Name in Clerk
-      await user.update({
-        username: trimmedUsername,
-        firstName: trimmedDisplayName,
-      });
+      // 1. Update Username and Display Name in Clerk only if changed
+      const clerkUpdates: { username?: string; firstName?: string } = {};
+      if (user.username !== trimmedUsername) {
+        clerkUpdates.username = trimmedUsername;
+      }
+      if (user.firstName !== trimmedDisplayName) {
+        clerkUpdates.firstName = trimmedDisplayName;
+      }
+      if (Object.keys(clerkUpdates).length > 0) {
+        await user.update(clerkUpdates);
+      }
 
-      // 2. Set password in Clerk so user can sign in via Google OR password
-      try {
-        await user.updatePassword({
-          newPassword: trimmedPassword,
-        });
-      } catch (passErr: any) {
-        const passMsg = passErr.errors?.[0]?.message || passErr.message || "";
-        console.warn("Error setting password on OAuth user:", passMsg);
-        // If the password format is invalid, surface it to the user
-        if (passMsg.toLowerCase().includes("password")) {
-          setError(`Password issue: ${passMsg}`);
-          setLoading(false);
-          return;
+      // 2. Set password in Clerk so user can sign in via Google OR password (if not already set)
+      if (!user.passwordEnabled && trimmedPassword) {
+        try {
+          await user.updatePassword({
+            newPassword: trimmedPassword,
+          });
+        } catch (passErr: any) {
+          const passMsg = passErr.errors?.[0]?.message || passErr.message || "";
+          console.warn("Error setting password on OAuth user:", passMsg);
+          // Surface only real password policy issues, ignore if already set
+          if (
+            passMsg.toLowerCase().includes("password") &&
+            !passMsg.toLowerCase().includes("already") &&
+            !passMsg.toLowerCase().includes("current")
+          ) {
+            setError(`Password issue: ${passMsg}`);
+            setLoading(false);
+            return;
+          }
         }
-        // For other errors (e.g. already has password), proceed silently
       }
 
       // 3. Sync user into Supabase database
-      await database.syncUser(
-        user.id,
-        userEmail,
-        trimmedUsername,
-        trimmedDisplayName,
-        user.imageUrl,
-      );
+      try {
+        await database.syncUser(
+          user.id,
+          userEmail,
+          trimmedUsername,
+          trimmedDisplayName,
+          user.imageUrl,
+        );
+      } catch (dbErr: any) {
+        console.error("Supabase syncUser failed:", dbErr);
+        const errMsg = dbErr?.message || String(dbErr);
+        if (
+          errMsg.includes("Network request failed") ||
+          dbErr?.name === "TypeError"
+        ) {
+          setError(
+            "Database connection failed (TypeError: Network request failed). Your Supabase project appears to be paused or unreachable. Please check your Supabase dashboard to resume it.",
+          );
+          setLoading(false);
+          return;
+        }
+        throw dbErr;
+      }
 
       void analytics.track("complete_profile", {
         has_username: true,
@@ -117,7 +146,10 @@ export default function CompleteProfileScreen() {
       router.replace("/(tabs)/map");
     } catch (err: any) {
       console.error("Complete Profile error:", err);
-      const msg = err.errors?.[0]?.message || err.message || "Failed to save profile. Please try again.";
+      const msg =
+        err.errors?.[0]?.message ||
+        err.message ||
+        "Failed to save profile. Please try again.";
       setError(msg);
     } finally {
       setLoading(false);
@@ -204,10 +236,10 @@ export default function CompleteProfileScreen() {
 
           <View className="mb-4">
             <Input
-              label="Create Password"
+              label={user?.passwordEnabled ? "Password (Already set)" : "Create Password"}
               aria-label="Create Password"
               value={password}
-              placeholder="At least 8 characters"
+              placeholder={user?.passwordEnabled ? "Leave blank to keep existing" : "At least 8 characters"}
               secureTextEntry
               onChangeText={setPassword}
             />
@@ -215,10 +247,10 @@ export default function CompleteProfileScreen() {
 
           <View className="mb-6">
             <Input
-              label="Confirm Password"
+              label={user?.passwordEnabled ? "Confirm Password (Optional)" : "Confirm Password"}
               aria-label="Confirm Password"
               value={confirmPassword}
-              placeholder="Re-enter your password"
+              placeholder={user?.passwordEnabled ? "Leave blank to keep existing" : "Re-enter your password"}
               secureTextEntry
               onChangeText={setConfirmPassword}
             />
