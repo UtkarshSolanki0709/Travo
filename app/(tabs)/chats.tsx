@@ -17,8 +17,7 @@ import {
 } from "lucide-react-native";
 import format from "date-fns/format";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useRef, useState } from "react";
-import debounce from "lodash.debounce";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -125,34 +124,48 @@ export default function ChatsScreen() {
     [currentUserId, router],
   );
 
-  const debouncedUserSearch = useRef(
-    debounce(async (query: string, userId: string) => {
-      setSearchLoading(true);
+  useEffect(() => {
+    const query = searchQuery.trim();
+    if (!query || !currentUserId) {
+      setSearchResults([]);
+      setSearchLoading(false);
+      return;
+    }
+
+    setSearchLoading(true);
+    let isCurrent = true;
+
+    const timer = setTimeout(async () => {
       try {
-        const results = await database.searchUsers(query, userId);
-        setSearchResults(results);
+        const results = await database.searchUsers(query, currentUserId);
+        if (isCurrent) {
+          setSearchResults(results);
+        }
       } catch (error) {
-        console.error("handleSearchUsers error:", error);
+        if (isCurrent) {
+          console.error("handleSearchUsers error:", error);
+        }
       } finally {
-        setSearchLoading(false);
+        if (isCurrent) {
+          setSearchLoading(false);
+        }
       }
-    }, 400),
-  ).current;
+    }, 400);
+
+    return () => {
+      isCurrent = false;
+      clearTimeout(timer);
+    };
+  }, [searchQuery, currentUserId]);
 
   const handleSearchUsers = (query: string) => {
     setSearchQuery(query);
-    if (!query.trim() || !clerkUser?.id) {
-      setSearchResults([]);
-      debouncedUserSearch.cancel();
-      return;
-    }
-    debouncedUserSearch(query, clerkUser.id);
   };
 
   const handleSendFriendRequest = async (targetUserId: string) => {
-    if (!clerkUser?.id) return;
+    if (!currentUserId) return;
     try {
-      await database.sendFriendRequest(clerkUser.id, targetUserId);
+      await database.sendFriendRequest(currentUserId, targetUserId);
       Alert.alert("Request Sent", "Friend request sent successfully!");
       setIsAddFriendModalVisible(false);
       setSearchQuery("");
