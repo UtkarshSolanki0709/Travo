@@ -170,7 +170,7 @@ function InitialLayout({ onRetry }: { onRetry: () => void }) {
         router.replace("/");
       }
     } else if (!isSignedIn && !inAuthGroup) {
-      router.replace("/sign-in");
+      router.replace("/intro");
     }
   }, [isSignedIn, isLoaded, segments, router, user]);
 

@@ -6,7 +6,8 @@ import { database, type Activity } from "@/services/database";
 import { analytics } from "@/services/analytics";
 import { COLORS } from "@/lib/theme";
 import { useUser } from "@clerk/expo";
-import { MapPin, PlusCircle, Users, ChevronRight } from "lucide-react-native";
+import { Users, ChevronRight } from "lucide-react-native";
+import { EmptyIllustration, type EmptyIllustrationVariant } from "@/components/ui/empty-illustration";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
@@ -220,28 +221,28 @@ const ActivitiesScreen = () => {
 
   const renderEmptyState = () => {
     let message = "";
-    let IconComponent = MapPin;
+    let illustration: EmptyIllustrationVariant = "explore";
 
     switch (activeTab) {
       case "nearby":
         message = userLocation
           ? "No activities nearby. Be the first to create one!"
           : "Enable location to see nearby activities";
-        IconComponent = MapPin;
+        illustration = "explore";
         break;
       case "my_activities":
         message = "You haven't created any activities yet";
-        IconComponent = PlusCircle;
+        illustration = "create";
         break;
       case "joined":
         message = "You haven't joined any activities yet";
-        IconComponent = Users;
+        illustration = "join";
         break;
     }
 
     return (
       <View className="flex-1 items-center justify-center px-8 py-16">
-        <IconComponent size={56} color={COLORS.textSecondary} opacity={0.5} />
+        <EmptyIllustration key={illustration} variant={illustration} />
         <Text className="text-center text-muted-foreground mt-4 text-body-md font-body">
           {message}
         </Text>

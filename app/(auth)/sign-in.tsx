@@ -13,6 +13,8 @@ import { Send, AlertCircle, Eye, EyeOff } from 'lucide-react-native';
 import * as AuthSession from 'expo-auth-session';
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useWarmUpBrowser } from '../../hooks/useWarmUpBrowser';
+import { useReducedMotion } from '@/lib/accessibility';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -20,6 +22,9 @@ import { COLORS } from '@/lib/theme';
 
 export default function Page() {
   useWarmUpBrowser();
+  const reduceMotion = useReducedMotion();
+  const headerEntering = reduceMotion ? FadeIn.duration(300) : FadeInDown.duration(450);
+  const cardEntering = reduceMotion ? FadeIn.duration(300) : FadeInDown.duration(450).delay(120);
   const { signIn } = useSignIn();
   const { isSignedIn } = useUser();
   const { startSSOFlow } = useSSO();
@@ -156,7 +161,7 @@ export default function Page() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View className="items-center mb-8">
+        <Animated.View style={{ alignItems: 'center', marginBottom: 32 }} entering={headerEntering}>
           <View className="h-16 w-16 items-center justify-center rounded-radius-lg bg-primary/10 mb-4 border border-primary/20">
             <Send size={32} color={COLORS.primary} />
           </View>
@@ -166,8 +171,9 @@ export default function Page() {
           <Text className="mt-2 text-center text-body-md text-muted-foreground font-body">
             Welcome back! Please sign in to continue.
           </Text>
-        </View>
+        </Animated.View>
 
+        <Animated.View entering={cardEntering}>
         <Card className="p-6">
           {error ? (
             <View className="mb-4 flex-row items-start rounded-radius-md bg-destructive/10 p-3 border border-destructive/20">
@@ -276,6 +282,7 @@ export default function Page() {
             </Link>
           </View>
         </Card>
+        </Animated.View>
       </KeyboardAwareScrollView>
     </ImageBackground>
   );

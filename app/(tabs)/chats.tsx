@@ -7,7 +7,6 @@ import {
   UserPlus,
   Users,
   User as UserIcon,
-  MessageCircle,
   X,
   Check,
   MessageSquare,
@@ -15,6 +14,7 @@ import {
   UserMinus,
   Clock,
 } from "lucide-react-native";
+import { EmptyIllustration } from "@/components/ui/empty-illustration";
 import format from "date-fns/format";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
@@ -425,7 +425,7 @@ export default function ChatsScreen() {
             }
             ListEmptyComponent={
               <View className="items-center justify-center py-20">
-                <MessageCircle size={56} color={COLORS.textSecondary} opacity={0.5} />
+                <EmptyIllustration variant="chat" width={150} />
                 <Text className="text-muted-foreground mt-4 text-body-md font-body text-center">
                   No active conversations. Join an activity or message a friend to get started!
                 </Text>
@@ -513,7 +513,7 @@ export default function ChatsScreen() {
             }
             ListEmptyComponent={
               <View className="items-center justify-center py-12">
-                <Users size={56} color={COLORS.textSecondary} opacity={0.5} />
+                <EmptyIllustration variant="join" width={150} />
                 <Text className="text-muted-foreground mt-3 text-body-md font-body text-center">
                   You haven&apos;t added any friends yet. Tap the button above to search users!
                 </Text>
