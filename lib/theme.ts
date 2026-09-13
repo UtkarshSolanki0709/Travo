@@ -21,7 +21,7 @@ export const COLORS = {
 
   // Gradients (reference — use with expo-linear-gradient)
   sunrise: {
-    colors: ['#14b8a8', '#f59e0b'] as [string, string],
+    colors: ['#14b8a6', '#f59e0b'] as [string, string],
     start: { x: 0, y: 0 },
     end: { x: 1, y: 1 },
   },

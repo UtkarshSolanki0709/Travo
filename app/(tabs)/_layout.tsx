@@ -1,7 +1,7 @@
 import { useUser } from "@clerk/expo";
 import { CustomTabBar } from "@/components/ui/CustomTabBar";
 import { Tabs } from "expo-router";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { AppState } from "react-native";
 import { flushOutbox } from "@/services/outbox";
 import { socketService } from "@/services/socketService";
@@ -10,8 +10,7 @@ import { analytics } from "@/services/analytics";
 export default function TabLayout() {
   const { user } = useUser();
 
-  // Offline outbox: retry unsent messages when the app foregrounds
-  // or the chat socket (re)connects.
+  
   useEffect(() => {
     if (!user?.id) return;
     const tryFlush = () => flushOutbox(user.id);
@@ -28,9 +27,14 @@ export default function TabLayout() {
     };
   }, [user?.id]);
 
+  const renderTabBar = useCallback(
+    (props: React.ComponentProps<typeof CustomTabBar>) => <CustomTabBar {...props} />,
+    [],
+  );
+
   return (
     <Tabs
-      tabBar={(props) => <CustomTabBar {...props} />}
+      tabBar={renderTabBar}
       screenListeners={{
         state: (e) => {
           const state = e.data?.state;

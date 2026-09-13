@@ -1,15 +1,4 @@
-import { Cloudinary } from "@cloudinary/url-gen";
-// // import { upload } from "cloudinary-react-native";
 import { config } from "@/lib/config";
-
-export const cld = new Cloudinary({
-  cloud: {
-    cloudName: config.cloudinaryCloudName,
-  },
-  url: {
-    secure: true,
-  },
-});
 
 export const uploadToCloudinary = async (
   fileUri: string,

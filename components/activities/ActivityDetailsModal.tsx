@@ -4,7 +4,7 @@ import { analytics } from "@/services/analytics";
 import { useUser } from "@clerk/expo";
 import { X, Calendar, MapPin, Edit3, Trash2, Check } from "lucide-react-native";
 import { COLORS } from "@/lib/theme";
-import { format } from "date-fns";
+import format from "date-fns/format";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -43,9 +43,11 @@ export default function ActivityDetailsModal({
   const [selectedRequesterId, setSelectedRequesterId] = useState<string | null>(
     null,
   );
-  const [displayActivity, setDisplayActivity] = useState<Activity | null>(
-    activity,
-  );
+  const [freshActivity, setFreshActivity] = useState<Activity | null>(null);
+  const displayActivity =
+    freshActivity && freshActivity.id === activity?.id
+      ? freshActivity
+      : activity;
   const [editModalVisible, setEditModalVisible] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -55,7 +57,7 @@ export default function ActivityDetailsModal({
       const isAdminUser = activity.creator_id === clerkUser.id;
       setIsAdmin(isAdminUser);
 
-      const [pData, rData, status, freshActivity] = await Promise.all([
+      const [pData, rData, status, fresh] = await Promise.all([
         database.getActivityParticipants(activity.id),
         isAdminUser
           ? database.getJoinRequests(activity.id, clerkUser.id)
@@ -67,8 +69,8 @@ export default function ActivityDetailsModal({
       setParticipants(pData);
       setRequests(rData);
       setUserStatus(status);
-      if (freshActivity) {
-        setDisplayActivity(freshActivity);
+      if (fresh) {
+        setFreshActivity(fresh);
       }
     } catch (error) {
       console.error("fetchData error:", error);
@@ -79,7 +81,6 @@ export default function ActivityDetailsModal({
 
   useEffect(() => {
     if (visible && activity) {
-      setDisplayActivity(activity);
       fetchData();
     }
   }, [visible, activity, fetchData]);
@@ -502,7 +503,7 @@ export default function ActivityDetailsModal({
                     onPress={confirmReject}
                     disabled={actionLoading || !rejectReason.trim()}
                     className={`flex-1 py-3 items-center rounded-xl ${
-                      !rejectReason.trim() ? "bg-red-200" : "bg-red-600"
+                      rejectReason.trim() ? "bg-red-600" : "bg-red-200"
                     }`}
                   >
                     <Text className="text-white font-bold">Decline</Text>

@@ -19,7 +19,7 @@ import {
   Ban,
   Film,
 } from "lucide-react-native";
-import { format } from "date-fns";
+import format from "date-fns/format";
 import * as Clipboard from "expo-clipboard";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
@@ -50,6 +50,7 @@ import { analytics } from "@/services/analytics";
 export default function ChatScreen() {
   const { id: conversationId } = useLocalSearchParams<{ id: string }>();
   const { user: clerkUser } = useUser();
+  const currentUserId = clerkUser?.id;
   const router = useRouter();
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -72,10 +73,10 @@ export default function ChatScreen() {
 
   // Connect to Socket.io backend
   useEffect(() => {
-    if (clerkUser?.id) {
-      socketService.connect(clerkUser.id);
+    if (currentUserId) {
+      socketService.connect(currentUserId);
     }
-  }, [clerkUser?.id]);
+  }, [currentUserId]);
 
   // Merge by id/client_temp_id so fetches never clobber messages that
   // arrived over the socket mid-flight, and server echoes replace
@@ -102,12 +103,12 @@ export default function ChatScreen() {
   }, []);
 
   const fetchMessages = useCallback(async () => {
-    if (!conversationId || !clerkUser?.id) return;
+    if (!conversationId || !currentUserId) return;
     try {
       // Instant open: show the cached history while the network fetch runs
       const cached = await messageStore.hydrateMessages(
         conversationId,
-        clerkUser.id,
+        currentUserId,
       );
       if (cached.length > 0) {
         mergeMessages(cached);
@@ -116,7 +117,7 @@ export default function ChatScreen() {
 
       const msgList = await chatService.getMessages(
         conversationId,
-        clerkUser.id,
+        currentUserId,
       );
       mergeMessages(msgList);
       messageStore
@@ -124,15 +125,15 @@ export default function ChatScreen() {
         .catch((e) => console.warn("message cache write failed", e));
 
       // Mark delivered & read
-      await chatService.markMessagesDelivered(conversationId, clerkUser.id);
-      await chatService.markMessagesRead(conversationId, clerkUser.id);
-      socketService.emitMarkAsSeen({ conversationId, userId: clerkUser.id });
+      await chatService.markMessagesDelivered(conversationId, currentUserId);
+      await chatService.markMessagesRead(conversationId, currentUserId);
+      socketService.emitMarkAsSeen({ conversationId, userId: currentUserId });
     } catch (error) {
       console.error("fetchMessages error details:", JSON.stringify(error, null, 2), error);
     } finally {
       setLoading(false);
     }
-  }, [conversationId, clerkUser?.id, mergeMessages]);
+  }, [conversationId, currentUserId, mergeMessages]);
 
   useEffect(() => {
     fetchMessages();

@@ -216,9 +216,9 @@ const MapScreen = () => {
   );
 
   const debouncedSearch = useRef(
-    debounce(async (text: string) => {
+    debounce(async (text: string, proximity?: { latitude: number; longitude: number }) => {
       if (text.trim().length >= 3) {
-        const data = await searchAll(text, userLocation || undefined);
+        const data = await searchAll(text, proximity);
         setResults(data);
       } else {
         setResults([]);
@@ -244,7 +244,7 @@ const MapScreen = () => {
         1000,
       );
     } else {
-      debouncedSearch(text);
+      debouncedSearch(text, userLocation || undefined);
     }
   };
 

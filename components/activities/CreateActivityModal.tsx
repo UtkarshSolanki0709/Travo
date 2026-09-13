@@ -36,7 +36,7 @@ import { COLORS } from "@/lib/theme";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
-import { format } from "date-fns";
+import format from "date-fns/format";
 import { useEffect, useState } from "react";
 import {
   Alert,

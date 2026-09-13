@@ -15,9 +15,10 @@ import {
   UserMinus,
   Clock,
 } from "lucide-react-native";
-import { format } from "date-fns";
+import format from "date-fns/format";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useRef, useState } from "react";
+import debounce from "lodash.debounce";
 import {
   ActivityIndicator,
   Alert,
@@ -38,6 +39,7 @@ type TabType = "chats" | "friends";
 
 export default function ChatsScreen() {
   const { user: clerkUser } = useUser();
+  const currentUserId = clerkUser?.id;
   const router = useRouter();
 
   const [activeTab, setActiveTab] = useState<TabType>("chats");
@@ -55,7 +57,7 @@ export default function ChatsScreen() {
 
   // Fetch conversations & friends
   const fetchData = useCallback(async () => {
-    if (!clerkUser?.id) return;
+    if (!currentUserId) return;
     try {
       // Instant open: show cached conversations while the network fetch runs
       const cached = await messageStore.hydrateConversations();
@@ -65,9 +67,9 @@ export default function ChatsScreen() {
       }
 
       const [convs, friendList, pendingList] = await Promise.all([
-        chatService.getConversations(clerkUser.id),
-        database.getFriends(clerkUser.id),
-        database.getPendingFriendRequests(clerkUser.id),
+        chatService.getConversations(currentUserId),
+        database.getFriends(currentUserId),
+        database.getPendingFriendRequests(currentUserId),
       ]);
 
       setConversations(convs);
@@ -80,15 +82,12 @@ export default function ChatsScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [clerkUser?.id]);
-
-  const fetchDataRef = useRef(fetchData);
-  fetchDataRef.current = fetchData;
+  }, [currentUserId]);
 
   useFocusEffect(
     useCallback(() => {
-      fetchDataRef.current();
-    }, []),
+      fetchData();
+    }, [fetchData]),
   );
 
   const onRefresh = async () => {
@@ -96,45 +95,58 @@ export default function ChatsScreen() {
     await fetchData();
   };
 
-  const handleOpenConversation = (conversationId: string) => {
-    router.push({
-      pathname: "/chat/[id]",
-      params: { id: conversationId },
-    });
-  };
-
-  const handleStartDirectChat = async (targetUserId: string) => {
-    if (!clerkUser?.id) return;
-    try {
-      const convId = await chatService.getOrCreateDirectConversation(
-        clerkUser.id,
-        targetUserId,
-      );
+  const handleOpenConversation = useCallback(
+    (conversationId: string) => {
       router.push({
         pathname: "/chat/[id]",
-        params: { id: convId },
+        params: { id: conversationId },
       });
-    } catch (error) {
-      console.error("handleStartDirectChat error:", error);
-      Alert.alert("Error", "Failed to open conversation");
-    }
-  };
+    },
+    [router],
+  );
 
-  const handleSearchUsers = async (query: string) => {
+  const handleStartDirectChat = useCallback(
+    async (targetUserId: string) => {
+      if (!currentUserId) return;
+      try {
+        const convId = await chatService.getOrCreateDirectConversation(
+          currentUserId,
+          targetUserId,
+        );
+        router.push({
+          pathname: "/chat/[id]",
+          params: { id: convId },
+        });
+      } catch (error) {
+        console.error("handleStartDirectChat error:", error);
+        Alert.alert("Error", "Failed to open conversation");
+      }
+    },
+    [currentUserId, router],
+  );
+
+  const debouncedUserSearch = useRef(
+    debounce(async (query: string, userId: string) => {
+      setSearchLoading(true);
+      try {
+        const results = await database.searchUsers(query, userId);
+        setSearchResults(results);
+      } catch (error) {
+        console.error("handleSearchUsers error:", error);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 400),
+  ).current;
+
+  const handleSearchUsers = (query: string) => {
     setSearchQuery(query);
     if (!query.trim() || !clerkUser?.id) {
       setSearchResults([]);
+      debouncedUserSearch.cancel();
       return;
     }
-    setSearchLoading(true);
-    try {
-      const results = await database.searchUsers(query, clerkUser.id);
-      setSearchResults(results);
-    } catch (error) {
-      console.error("handleSearchUsers error:", error);
-    } finally {
-      setSearchLoading(false);
-    }
+    debouncedUserSearch(query, clerkUser.id);
   };
 
   const handleSendFriendRequest = async (targetUserId: string) => {
@@ -179,30 +191,33 @@ export default function ChatsScreen() {
     }
   };
 
-  const handleRemoveFriend = (friend: User) => {
-    Alert.alert(
-      "Remove Friend",
-      `Are you sure you want to remove ${friend.display_name || friend.username} from your friends list?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Remove",
-          style: "destructive",
-          onPress: async () => {
-            if (!clerkUser?.id) return;
-            try {
-              await database.removeFriend(clerkUser.id, friend.id);
-              await fetchData();
-              Alert.alert("Success", "Friend removed");
-            } catch (error) {
-              console.error("handleRemoveFriend error:", error);
-              Alert.alert("Error", "Failed to remove friend");
-            }
+  const handleRemoveFriend = useCallback(
+    (friend: User) => {
+      Alert.alert(
+        "Remove Friend",
+        `Are you sure you want to remove ${friend.display_name || friend.username} from your friends list?`,
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Remove",
+            style: "destructive",
+            onPress: async () => {
+              if (!currentUserId) return;
+              try {
+                await database.removeFriend(currentUserId, friend.id);
+                await fetchData();
+                Alert.alert("Success", "Friend removed");
+              } catch (error) {
+                console.error("handleRemoveFriend error:", error);
+                Alert.alert("Error", "Failed to remove friend");
+              }
+            },
           },
-        },
-      ],
-    );
-  };
+        ],
+      );
+    },
+    [currentUserId, fetchData],
+  );
 
   const getSearchUserStatus = (targetId: string) => {
     if (friends.some((f) => f.id === targetId)) {
@@ -221,7 +236,7 @@ export default function ChatsScreen() {
     return "none";
   };
 
-  const renderConversationItem = ({ item }: { item: Conversation }) => {
+  const renderConversationItem = useCallback(({ item }: { item: Conversation }) => {
     const isGroup = item.type === "group";
     const title = isGroup
       ? item.title || "Activity Group Chat"
@@ -277,9 +292,9 @@ export default function ChatsScreen() {
         </View>
       </TouchableOpacity>
     );
-  };
+  }, [handleOpenConversation]);
 
-  const renderFriendItem = ({ item }: { item: User }) => (
+  const renderFriendItem = useCallback(({ item }: { item: User }) => (
     <View className="flex-row items-center justify-between p-4 bg-surface mb-2.5 rounded-radius-lg border border-border shadow-elevation-1">
       <View className="flex-row items-center flex-1 mr-2">
         <Avatar isSelf={false}>
@@ -320,7 +335,7 @@ export default function ChatsScreen() {
         </TouchableOpacity>
       </View>
     </View>
-  );
+  ), [handleStartDirectChat, handleRemoveFriend]);
 
   return (
     <View className="flex-1 bg-background">

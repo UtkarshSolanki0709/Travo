@@ -23,6 +23,7 @@ type Tab = "nearby" | "my_activities" | "joined";
 
 const ActivitiesScreen = () => {
   const { user } = useUser();
+  const userId = user?.id;
   const { userLocation } = useMapContext();
   const [activeTab, setActiveTab] = useState<Tab>("nearby");
   const [nearbyActivities, setNearbyActivities] = useState<Activity[]>([]);
@@ -89,12 +90,12 @@ const ActivitiesScreen = () => {
   );
 
   const fetchUserActivities = useCallback(async () => {
-    if (!user?.id) return;
+    if (!userId) return;
 
     try {
       const [{ created, joined }, pending] = await Promise.all([
-        database.getUserActivities(user.id),
-        database.getPendingRequestsForUser(user.id),
+        database.getUserActivities(userId),
+        database.getPendingRequestsForUser(userId),
       ]);
       setMyActivities(created);
       setJoinedActivities(joined);
@@ -102,7 +103,7 @@ const ActivitiesScreen = () => {
     } catch (error) {
       console.error("Failed to fetch user activities:", error);
     }
-  }, [user?.id]);
+  }, [userId]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -113,17 +114,11 @@ const ActivitiesScreen = () => {
     setRefreshing(false);
   }, [fetchNearbyActivities, fetchUserActivities]);
 
-  const fetchNearbyActivitiesRef = useRef(fetchNearbyActivities);
-  fetchNearbyActivitiesRef.current = fetchNearbyActivities;
-
-  const fetchUserActivitiesRef = useRef(fetchUserActivities);
-  fetchUserActivitiesRef.current = fetchUserActivities;
-
   useFocusEffect(
     useCallback(() => {
-      fetchNearbyActivitiesRef.current({ forceImmediate: true });
-      fetchUserActivitiesRef.current();
-    }, []),
+      fetchNearbyActivities({ forceImmediate: true });
+      fetchUserActivities();
+    }, [fetchNearbyActivities, fetchUserActivities]),
   );
 
   const displayActivities = useMemo(() => {
@@ -139,73 +134,89 @@ const ActivitiesScreen = () => {
     }
   }, [activeTab, nearbyActivities, myActivities, joinedActivities]);
 
-  const calculateDistance = (activity: Activity) => {
-    if (!userLocation) return undefined;
-    return database.calculateDistance(
-      userLocation.latitude,
-      userLocation.longitude,
-      activity.latitude,
-      activity.longitude,
-    );
-  };
+  const calculateDistance = useCallback(
+    (activity: Activity) => {
+      if (!userLocation) return undefined;
+      return database.calculateDistance(
+        userLocation.latitude,
+        userLocation.longitude,
+        activity.latitude,
+        activity.longitude,
+      );
+    },
+    [userLocation],
+  );
 
-  const handleActivityPress = (activity: Activity) => {
+  const handleActivityPress = useCallback((activity: Activity) => {
     void analytics.track("activity_viewed", { activity_id: activity.id });
     setSelectedActivity(activity);
-  };
+  }, []);
 
-  const handleEdit = (activity: Activity) => {
+  const handleEdit = useCallback((activity: Activity) => {
     setEditingActivity(activity);
     setIsEditModalVisible(true);
-  };
+  }, []);
 
-  const handleDelete = async (activityId: string) => {
-    Alert.alert(
-      "Delete Activity",
-      "Are you sure you want to delete this activity? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await database.deleteActivity(activityId);
-              await fetchUserActivities();
-              await fetchNearbyActivities({ forceImmediate: true });
-            } catch (error) {
-              console.error("Delete error:", error);
-              Alert.alert("Error", "Failed to delete activity");
-            }
+  const handleDelete = useCallback(
+    async (activityId: string) => {
+      Alert.alert(
+        "Delete Activity",
+        "Are you sure you want to delete this activity? This action cannot be undone.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                await database.deleteActivity(activityId);
+                await fetchUserActivities();
+                await fetchNearbyActivities({ forceImmediate: true });
+              } catch (error) {
+                console.error("Delete error:", error);
+                Alert.alert("Error", "Failed to delete activity");
+              }
+            },
           },
-        },
-      ],
-    );
-  };
+        ],
+      );
+    },
+    [fetchUserActivities, fetchNearbyActivities],
+  );
 
-  const renderActivity = ({ item }: { item: Activity }) => {
-    const isAdmin = item.creator_id === user?.id;
+  const renderActivity = useCallback(
+    ({ item }: { item: Activity }) => {
+      const isAdmin = item.creator_id === userId;
 
-    return (
-      <ActivityCard
-        activity={item}
-        onPress={() => handleActivityPress(item)}
-        distance={calculateDistance(item)}
-        participantCount={item.participant_count || 0}
-        isJoined={activeTab === "joined"}
-        onEdit={
-          activeTab === "my_activities" && isAdmin
-            ? () => handleEdit(item)
-            : undefined
-        }
-        onDelete={
-          activeTab === "my_activities" && isAdmin
-            ? () => handleDelete(item.id)
-            : undefined
-        }
-      />
-    );
-  };
+      return (
+        <ActivityCard
+          activity={item}
+          onPress={() => handleActivityPress(item)}
+          distance={calculateDistance(item)}
+          participantCount={item.participant_count || 0}
+          isJoined={activeTab === "joined"}
+          onEdit={
+            activeTab === "my_activities" && isAdmin
+              ? () => handleEdit(item)
+              : undefined
+          }
+          onDelete={
+            activeTab === "my_activities" && isAdmin
+              ? () => handleDelete(item.id)
+              : undefined
+          }
+        />
+      );
+    },
+    [
+      userId,
+      activeTab,
+      calculateDistance,
+      handleActivityPress,
+      handleEdit,
+      handleDelete,
+    ],
+  );
 
   const renderEmptyState = () => {
     let message = "";
@@ -342,7 +353,6 @@ const ActivitiesScreen = () => {
           visible={!!selectedActivity}
           onClose={() => {
             setSelectedActivity(null);
-            onRefresh();
           }}
         />
 

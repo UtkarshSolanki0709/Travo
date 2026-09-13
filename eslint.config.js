@@ -7,4 +7,12 @@ module.exports = defineConfig([
   {
     ignores: ['dist/*', 'supabase/**', '.expo/**'],
   },
+  {
+    rules: {
+      // Reanimated shared values (scale.value = ...) mutate by design
+      'react-hooks/immutability': 'off',
+      // Allow async data fetching functions called in effects in React Native
+      'react-hooks/set-state-in-effect': 'off',
+    },
+  },
 ]);

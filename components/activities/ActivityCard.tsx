@@ -1,6 +1,6 @@
 import type { Activity } from "@/services/database";
 import { Clock, MapPin, Users, Edit3, Trash2 } from "lucide-react-native";
-import { format } from "date-fns";
+import format from "date-fns/format";
 import { Text, Pressable, View } from "react-native";
 import Animated, {
   useAnimatedStyle,

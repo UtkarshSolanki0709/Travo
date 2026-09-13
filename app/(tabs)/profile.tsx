@@ -730,97 +730,105 @@ export default function ProfileScreen() {
           onToggleInterest={toggleInterest}
         />
 
-        <CreatePostModal
-          visible={isCreatingPost}
-          postText={postText}
-          postMedia={postMedia}
-          venueName={venueName}
-          locationName={locationName}
-          venueResults={venueResults}
-          locationResults={locationResults}
-          isSearchingVenue={isSearchingVenue}
-          isSearchingLocation={isSearchingLocation}
-          creating={creating}
-          videoPlayer={createPlayer}
-          postCity={postCity}
-          postCountry={postCountry}
-          visibility={postVisibility}
-          onVisibilityChange={setPostVisibility}
-          onClose={() => setIsCreatingPost(false)}
-          onPostTextChange={setPostText}
-          onPickMedia={pickPostMedia}
-          onRemoveMedia={() => setPostMedia(null)}
-          onVenueSearch={handleSearchVenue}
-          onLocationSearch={handleSearchLocation}
-          onSelectVenue={selectVenue}
-          onSelectLocation={selectLocation}
-          onCreatePost={handleCreatePost}
-        />
+        {isCreatingPost && (
+          <CreatePostModal
+            visible={true}
+            postText={postText}
+            postMedia={postMedia}
+            venueName={venueName}
+            locationName={locationName}
+            venueResults={venueResults}
+            locationResults={locationResults}
+            isSearchingVenue={isSearchingVenue}
+            isSearchingLocation={isSearchingLocation}
+            creating={creating}
+            videoPlayer={createPlayer}
+            postCity={postCity}
+            postCountry={postCountry}
+            visibility={postVisibility}
+            onVisibilityChange={setPostVisibility}
+            onClose={() => setIsCreatingPost(false)}
+            onPostTextChange={setPostText}
+            onPickMedia={pickPostMedia}
+            onRemoveMedia={() => setPostMedia(null)}
+            onVenueSearch={handleSearchVenue}
+            onLocationSearch={handleSearchLocation}
+            onSelectVenue={selectVenue}
+            onSelectLocation={selectLocation}
+            onCreatePost={handleCreatePost}
+          />
+        )}
 
-        <EditPostModal
-          visible={isEditingPost}
-          post={selectedPost}
-          postText={postText}
-          postMedia={postMedia}
-          venueName={venueName}
-          locationName={locationName}
-          venueResults={venueResults}
-          locationResults={locationResults}
-          isSearchingVenue={isSearchingVenue}
-          isSearchingLocation={isSearchingLocation}
-          updating={updating}
-          videoPlayer={editPlayer}
-          postCity={postCity}
-          postCountry={postCountry}
-          visibility={postVisibility}
-          onVisibilityChange={setPostVisibility}
-          onClose={() => {
-            setIsEditingPost(false);
-            setEditingPostId(null);
-            setPostText("");
-            setPostMedia(null);
-            setMediaRemoved(false);
-            setVenueName("");
-            setLocationName("");
-            setPostCity("");
-            setPostCountry("");
-            setPostVisibility("public");
-          }}
-          onPostTextChange={setPostText}
-          onPickMedia={pickPostMedia}
-          onRemoveMedia={() => {
-            setPostMedia(null);
-            if (isEditingPost) setMediaRemoved(true);
-          }}
-          onVenueSearch={handleSearchVenue}
-          onLocationSearch={handleSearchLocation}
-          onSelectVenue={selectVenue}
-          onSelectLocation={selectLocation}
-          onUpdatePost={handleUpdatePost}
-        />
+        {isEditingPost && (
+          <EditPostModal
+            visible={true}
+            post={selectedPost}
+            postText={postText}
+            postMedia={postMedia}
+            venueName={venueName}
+            locationName={locationName}
+            venueResults={venueResults}
+            locationResults={locationResults}
+            isSearchingVenue={isSearchingVenue}
+            isSearchingLocation={isSearchingLocation}
+            updating={updating}
+            videoPlayer={editPlayer}
+            postCity={postCity}
+            postCountry={postCountry}
+            visibility={postVisibility}
+            onVisibilityChange={setPostVisibility}
+            onClose={() => {
+              setIsEditingPost(false);
+              setEditingPostId(null);
+              setPostText("");
+              setPostMedia(null);
+              setMediaRemoved(false);
+              setVenueName("");
+              setLocationName("");
+              setPostCity("");
+              setPostCountry("");
+              setPostVisibility("public");
+            }}
+            onPostTextChange={setPostText}
+            onPickMedia={pickPostMedia}
+            onRemoveMedia={() => {
+              setPostMedia(null);
+              if (isEditingPost) setMediaRemoved(true);
+            }}
+            onVenueSearch={handleSearchVenue}
+            onLocationSearch={handleSearchLocation}
+            onSelectVenue={selectVenue}
+            onSelectLocation={selectLocation}
+            onUpdatePost={handleUpdatePost}
+          />
+        )}
 
-        <PostDetailModal
-          visible={isPostDetailVisible}
-          post={selectedPost}
-          comments={comments}
-          newComment={newComment}
-          socialLoading={socialLoading}
-          videoPlayer={detailPlayer}
-          currentUserId={clerkUser?.id || ""}
-          onClose={() => setIsPostDetailVisible(false)}
-          onToggleLike={handleToggleLike}
-          onCommentChange={setNewComment}
-          onAddComment={handleAddComment}
-          onDeleteComment={handleDeleteComment}
-          onReplyToComment={handleReplyToComment}
-          onDeletePost={handleDeletePost}
-          onEditPost={handleEditPostOpen}
-        />
+        {isPostDetailVisible && (
+          <PostDetailModal
+            visible={true}
+            post={selectedPost}
+            comments={comments}
+            newComment={newComment}
+            socialLoading={socialLoading}
+            videoPlayer={detailPlayer}
+            currentUserId={clerkUser?.id || ""}
+            onClose={() => setIsPostDetailVisible(false)}
+            onToggleLike={handleToggleLike}
+            onCommentChange={setNewComment}
+            onAddComment={handleAddComment}
+            onDeleteComment={handleDeleteComment}
+            onReplyToComment={handleReplyToComment}
+            onDeletePost={handleDeletePost}
+            onEditPost={handleEditPostOpen}
+          />
+        )}
 
-        <LegalPrivacyModal
-          visible={isLegalModalVisible}
-          onClose={() => setIsLegalModalVisible(false)}
-        />
+        {isLegalModalVisible && (
+          <LegalPrivacyModal
+            visible={true}
+            onClose={() => setIsLegalModalVisible(false)}
+          />
+        )}
       </Show>
 
       <Show when="signed-out">
