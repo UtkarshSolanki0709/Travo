@@ -17,8 +17,9 @@ import { useFonts } from "expo-font";
 import { Slot, useRouter, useSegments, ThemeProvider } from "expo-router";
 import Head from "expo-router/head";
 import * as SplashScreen from "expo-splash-screen";
-import { useCallback, useEffect, useRef } from "react";
-import { ActivityIndicator, AppState, View } from "react-native";
+import { AlertCircle, RefreshCw } from "lucide-react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ActivityIndicator, AppState, Text, TouchableOpacity, View } from "react-native";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import "react-native-url-polyfill/auto";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
@@ -51,14 +52,28 @@ if (__DEV__ && CLERK_PUBLISHABLE_KEY) {
   );
 }
 
-function InitialLayout() {
+function InitialLayout({ onRetry }: { onRetry: () => void }) {
   const { isLoaded, isSignedIn, getToken } = useAuth();
   const { user } = useUser();
   const segments = useSegments();
   const router = useRouter();
   const trackedAppOpen = useRef(false);
+  const [hasTimedOut, setHasTimedOut] = useState(false);
 
   useRealtimeNotifications();
+
+  useEffect(() => {
+    if (isLoaded) {
+      setHasTimedOut(false);
+      return;
+    }
+    const timer = setTimeout(() => {
+      if (!isLoaded) {
+        setHasTimedOut(true);
+      }
+    }, 12000);
+    return () => clearTimeout(timer);
+  }, [isLoaded]);
 
   useEffect(() => {
     if (isSignedIn) {
@@ -157,6 +172,84 @@ function InitialLayout() {
   }, [isSignedIn, isLoaded, segments, router, user]);
 
   if (!isLoaded) {
+    if (hasTimedOut) {
+      return (
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            paddingHorizontal: 28,
+            backgroundColor: COLORS.background,
+          }}
+        >
+          <View
+            style={{
+              width: 68,
+              height: 68,
+              borderRadius: 34,
+              backgroundColor: COLORS.destructive + "15",
+              justifyContent: "center",
+              alignItems: "center",
+              marginBottom: 18,
+            }}
+          >
+            <AlertCircle size={34} color={COLORS.destructive} />
+          </View>
+          <Text
+            style={{
+              fontSize: 20,
+              fontFamily: "Poppins_700Bold",
+              color: COLORS.textPrimary,
+              textAlign: "center",
+              marginBottom: 8,
+            }}
+          >
+            Unable to Connect
+          </Text>
+          <Text
+            style={{
+              fontSize: 14,
+              fontFamily: "Inter_400Regular",
+              color: COLORS.textSecondary,
+              textAlign: "center",
+              marginBottom: 24,
+              lineHeight: 21,
+            }}
+          >
+            Authentication service took too long to respond. Please check your internet connection and try again.
+          </Text>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => {
+              setHasTimedOut(false);
+              onRetry();
+            }}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: COLORS.primary,
+              paddingHorizontal: 22,
+              paddingVertical: 12,
+              borderRadius: 12,
+              gap: 8,
+            }}
+          >
+            <RefreshCw size={16} color="#ffffff" />
+            <Text
+              style={{
+                color: "#ffffff",
+                fontSize: 15,
+                fontFamily: "Inter_600SemiBold",
+              }}
+            >
+              Retry Connection
+            </Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
     return (
       <View
         style={{
@@ -176,6 +269,11 @@ function InitialLayout() {
 
 export default function RootLayout() {
   useThemeHotkey();
+  const [clerkKey, setClerkKey] = useState(0);
+
+  const handleRetryClerk = useCallback(() => {
+    setClerkKey((prev) => prev + 1);
+  }, []);
 
   const [fontsLoaded, fontError] = useFonts({
     Poppins_700Bold,
@@ -204,13 +302,14 @@ export default function RootLayout() {
       <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
         <ThemeProvider value={NAV_THEME}>
           <ClerkProvider
+            key={clerkKey}
             publishableKey={CLERK_PUBLISHABLE_KEY || ""}
             tokenCache={tokenCache}
           >
             <KeyboardProvider>
               <MapProvider>
                 <ToastProvider>
-                  <InitialLayout />
+                  <InitialLayout onRetry={handleRetryClerk} />
                   <PortalHost />
                 </ToastProvider>
               </MapProvider>
