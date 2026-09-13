@@ -36,7 +36,7 @@ export default function OAuthCallbackScreen() {
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [isLoaded, isSignedIn, user?.username, router]);
+  }, [isLoaded, isSignedIn, user?.username, user?.unsafeMetadata, router]);
 
   return (
     <View
