@@ -17,7 +17,10 @@ export default function OAuthCallbackScreen() {
     if (isSignedIn) {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       // If the user does not have a username set yet, send to complete-profile
-      if (!user?.username) {
+      const hasUsername = Boolean(
+        user?.username || (user?.unsafeMetadata as any)?.username,
+      );
+      if (!hasUsername) {
         router.replace("/complete-profile");
       } else {
         router.replace("/(tabs)/map");

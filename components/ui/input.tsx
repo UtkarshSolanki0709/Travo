@@ -7,10 +7,11 @@ import { Platform, Text, TextInput, View } from 'react-native';
 export interface InputProps extends React.ComponentProps<typeof TextInput> {
   error?: string;
   label?: string;
+  rightElement?: React.ReactNode;
 }
 
 const Input = React.forwardRef<React.ElementRef<typeof TextInput>, InputProps>(
-  ({ className, error, label, editable, placeholderTextColor, ...props }, ref) => {
+  ({ className, error, label, editable, placeholderTextColor, rightElement, ...props }, ref) => {
     const [isFocused, setIsFocused] = React.useState(false);
     const isDisabled = editable === false;
 
@@ -53,6 +54,11 @@ const Input = React.forwardRef<React.ElementRef<typeof TextInput>, InputProps>(
             )}
             {...props}
           />
+          {rightElement ? (
+            <View className="ml-2 justify-center items-center">
+              {rightElement}
+            </View>
+          ) : null}
         </View>
 
         {error ? (

@@ -3,10 +3,11 @@ import {
   Text,
   View,
   ImageBackground,
+  TouchableOpacity,
 } from "react-native";
 import { useUser } from "@clerk/expo";
 import { useRouter } from "expo-router";
-import { UserCheck, AlertCircle, CheckCircle2 } from "lucide-react-native";
+import { UserCheck, AlertCircle, CheckCircle2, Eye, EyeOff } from "lucide-react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,7 @@ import { Card } from "@/components/ui/card";
 import { COLORS } from "@/lib/theme";
 import { database } from "@/services/database";
 import { analytics } from "@/services/analytics";
+import { validatePasswordStrength } from "@/lib/utils";
 
 export default function CompleteProfileScreen() {
   const { user, isLoaded } = useUser();
@@ -32,6 +34,8 @@ export default function CompleteProfileScreen() {
   const [displayName, setDisplayName] = useState(user?.fullName || "");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -63,8 +67,9 @@ export default function CompleteProfileScreen() {
     }
 
     if (trimmedPassword) {
-      if (trimmedPassword.length < 8) {
-        setError("Password must be at least 8 characters long.");
+      const passValidation = validatePasswordStrength(trimmedPassword);
+      if (!passValidation.isValid) {
+        setError(passValidation.error || "Password does not meet requirements.");
         return;
       }
 
@@ -87,7 +92,23 @@ export default function CompleteProfileScreen() {
         clerkUpdates.firstName = trimmedDisplayName;
       }
       if (Object.keys(clerkUpdates).length > 0) {
-        await user.update(clerkUpdates);
+        try {
+          await user.update(clerkUpdates);
+        } catch (clerkErr: any) {
+          console.warn("Clerk user.update directly failed, saving to metadata:", clerkErr);
+          // If username or firstName is not enabled/supported in Clerk instance, save to unsafeMetadata
+          try {
+            await user.updateMetadata({
+              unsafeMetadata: {
+                ...user.unsafeMetadata,
+                username: trimmedUsername,
+                display_name: trimmedDisplayName,
+              },
+            });
+          } catch (metaErr) {
+            console.warn("Clerk updateMetadata fallback failed:", metaErr);
+          }
+        }
       }
 
       // 2. Set password in Clerk so user can sign in via Google OR password (if not already set)
@@ -146,9 +167,12 @@ export default function CompleteProfileScreen() {
       router.replace("/(tabs)/map");
     } catch (err: any) {
       console.error("Complete Profile error:", err);
+      const firstErr = err?.errors?.[0];
+      const paramName = firstErr?.meta?.paramName || firstErr?.paramName;
       const msg =
-        err.errors?.[0]?.message ||
-        err.message ||
+        firstErr?.longMessage ||
+        (paramName ? `Field "${paramName}" ${firstErr?.message}` : firstErr?.message) ||
+        err?.message ||
         "Failed to save profile. Please try again.";
       setError(msg);
     } finally {
@@ -239,9 +263,22 @@ export default function CompleteProfileScreen() {
               label={user?.passwordEnabled ? "Password (Already set)" : "Create Password"}
               aria-label="Create Password"
               value={password}
-              placeholder={user?.passwordEnabled ? "Leave blank to keep existing" : "At least 8 characters"}
-              secureTextEntry
+              placeholder={user?.passwordEnabled ? "Leave blank to keep existing" : "Min 8 chars, 1 upper, 1 lower, 1 num, 1 symbol"}
+              secureTextEntry={!showPassword}
               onChangeText={setPassword}
+              rightElement={
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                  accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff size={18} color={COLORS.textSecondary} />
+                  ) : (
+                    <Eye size={18} color={COLORS.textSecondary} />
+                  )}
+                </TouchableOpacity>
+              }
             />
           </View>
 
@@ -251,8 +288,21 @@ export default function CompleteProfileScreen() {
               aria-label="Confirm Password"
               value={confirmPassword}
               placeholder={user?.passwordEnabled ? "Leave blank to keep existing" : "Re-enter your password"}
-              secureTextEntry
+              secureTextEntry={!showConfirmPassword}
               onChangeText={setConfirmPassword}
+              rightElement={
+                <TouchableOpacity
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                  accessibilityLabel={showConfirmPassword ? "Hide password" : "Show password"}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff size={18} color={COLORS.textSecondary} />
+                  ) : (
+                    <Eye size={18} color={COLORS.textSecondary} />
+                  )}
+                </TouchableOpacity>
+              }
             />
           </View>
 

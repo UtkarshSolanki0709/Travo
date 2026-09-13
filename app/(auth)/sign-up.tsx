@@ -9,7 +9,7 @@ import { useSignUp, useSSO, useUser } from "@clerk/expo";
 import { analytics } from "@/services/analytics";
 import { Link, useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
-import { Send, AlertCircle } from 'lucide-react-native';
+import { Send, AlertCircle, Eye, EyeOff } from 'lucide-react-native';
 import * as AuthSession from 'expo-auth-session';
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useWarmUpBrowser } from '../../hooks/useWarmUpBrowser';
@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { COLORS } from '@/lib/theme';
+import { validatePasswordStrength } from '@/lib/utils';
 
 export default function SignUpScreen() {
   useWarmUpBrowser();
@@ -28,12 +29,19 @@ export default function SignUpScreen() {
   const [emailAddress, setEmailAddress] = React.useState('');
   const [username, setUsername] = React.useState('');
   const [password, setPassword] = React.useState('');
+  const [showPassword, setShowPassword] = React.useState(false);
   const [pendingVerification, setPendingVerification] = React.useState(false);
   const [code, setCode] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
 
   const onSignUpPress = async () => {
+    const passValidation = validatePasswordStrength(password);
+    if (!passValidation.isValid) {
+      setError(passValidation.error || 'Password does not meet requirements.');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -159,7 +167,12 @@ export default function SignUpScreen() {
         return;
       }
       console.error('OAuth error', err);
-      setError('Failed to sign up with Google.');
+      const detailed =
+        err?.errors?.[0]?.longMessage ||
+        err?.errors?.[0]?.message ||
+        err?.message ||
+        'Failed to sign up with Google.';
+      setError(detailed);
     } finally {
       setLoading(false);
     }
@@ -268,9 +281,22 @@ export default function SignUpScreen() {
                   label="Password"
                   aria-label="Password"
                   value={password}
-                  placeholder="Create a password"
-                  secureTextEntry
+                  placeholder="Min 8 chars, 1 upper, 1 lower, 1 num, 1 symbol"
+                  secureTextEntry={!showPassword}
                   onChangeText={setPassword}
+                  rightElement={
+                    <TouchableOpacity
+                      onPress={() => setShowPassword(!showPassword)}
+                      hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                      accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? (
+                        <EyeOff size={18} color={COLORS.textSecondary} />
+                      ) : (
+                        <Eye size={18} color={COLORS.textSecondary} />
+                      )}
+                    </TouchableOpacity>
+                  }
                 />
               </View>
 

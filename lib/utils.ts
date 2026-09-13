@@ -46,3 +46,30 @@ export function getCategoryTextColor(category: string): string {
     ? '#0f1729'
     : '#ffffff';
 }
+
+/**
+ * Validates password strength:
+ * - Minimum 8 characters
+ * - At least one lowercase letter
+ * - At least one uppercase letter
+ * - At least one number
+ * - At least one special character
+ */
+export function validatePasswordStrength(password: string): { isValid: boolean; error?: string } {
+  if (password.length < 8) {
+    return { isValid: false, error: "Password must be at least 8 characters long." };
+  }
+  if (!/[a-z]/.test(password)) {
+    return { isValid: false, error: "Password must contain at least one lowercase letter." };
+  }
+  if (!/[A-Z]/.test(password)) {
+    return { isValid: false, error: "Password must contain at least one uppercase letter." };
+  }
+  if (!/[0-9]/.test(password)) {
+    return { isValid: false, error: "Password must contain at least one number." };
+  }
+  if (!/[^A-Za-z0-9]/.test(password)) {
+    return { isValid: false, error: "Password must contain at least one special character (e.g. !@#$%^&*)." };
+  }
+  return { isValid: true };
+}

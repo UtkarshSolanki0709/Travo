@@ -161,7 +161,10 @@ function InitialLayout({ onRetry }: { onRetry: () => void }) {
         return;
       }
 
-      if (!user?.username) {
+      const hasUsername = Boolean(
+        user?.username || (user?.unsafeMetadata as any)?.username,
+      );
+      if (!hasUsername) {
         router.replace("/complete-profile");
       } else {
         router.replace("/");
